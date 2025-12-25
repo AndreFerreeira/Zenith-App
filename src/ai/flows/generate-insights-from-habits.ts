@@ -44,14 +44,7 @@ const prompt = ai.definePrompt({
 
   Habit Data:
   {{habitData}}
-
-  Summary:
-  {{summary}}
-
-  Areas for Improvement:
-  {{areasForImprovement}}
-  Progress:
-  {{progress}}`,
+`,
 });
 
 const generateInsightsFromHabitsFlow = ai.defineFlow(
@@ -62,8 +55,22 @@ const generateInsightsFromHabitsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    // Add a short, one-sentence summary of progress to the output
-    output!.progress = 'The user has made progress in some habits but needs improvement in others.';
+    
+    const progressPrompt = ai.definePrompt({
+        name: 'summarizeProgressPrompt',
+        input: { schema: z.object({ summary: z.string() }) },
+        output: { schema: z.object({ progress: z.string().describe('A short, one-sentence summary of progress.') }) },
+        prompt: `Based on the following summary, write a very short, one-sentence summary of the user's progress.
+        
+        Summary:
+        {{summary}}
+        `,
+    });
+
+    const progressResult = await progressPrompt({ summary: output!.summary });
+    
+    output!.progress = progressResult.output!.progress;
+
     return output!;
   }
 );
