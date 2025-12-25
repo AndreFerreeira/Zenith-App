@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { DollarSign } from "lucide-react";
 import {
@@ -11,8 +12,15 @@ import {
 } from "@/components/ui/card";
 import { financialData } from "@/lib/data";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function FinancialOverview() {
+  const [formattedBalance, setFormattedBalance] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFormattedBalance(financialData.balance.toLocaleString());
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -23,9 +31,13 @@ export function FinancialOverview() {
         <CardDescription>{financialData.summary}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
-        <div className="text-4xl font-bold tracking-tighter text-primary">
-          ${financialData.balance.toLocaleString()}
-        </div>
+        {formattedBalance ? (
+          <div className="text-4xl font-bold tracking-tighter text-primary">
+            ${formattedBalance}
+          </div>
+        ) : (
+          <Skeleton className="h-10 w-40" />
+        )}
         <div className="h-[200px]">
             <ChartContainer config={{
                 income: { label: 'Income', color: 'hsl(var(--chart-1))' },
