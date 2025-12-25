@@ -25,10 +25,28 @@ import {
 } from "lucide-react";
 
 export default function HabitTrackerPage() {
-  const [monthlyHabits, setMonthlyHabits] = React.useState<MonthlyHabit[]>(
-    initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() }))
-  );
+  const [monthlyHabits, setMonthlyHabits] = React.useState<MonthlyHabit[]>([]);
   const [newHabitName, setNewHabitName] = React.useState("");
+
+  React.useEffect(() => {
+    try {
+      const savedHabits = localStorage.getItem("monthlyHabits");
+      if (savedHabits) {
+        setMonthlyHabits(JSON.parse(savedHabits));
+      } else {
+        setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
+      }
+    } catch (error) {
+      console.error("Failed to parse from localStorage", error);
+      setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (monthlyHabits.length > 0) {
+      localStorage.setItem("monthlyHabits", JSON.stringify(monthlyHabits));
+    }
+  }, [monthlyHabits]);
 
   const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -163,3 +181,5 @@ export default function HabitTrackerPage() {
     </div>
   );
 }
+
+    

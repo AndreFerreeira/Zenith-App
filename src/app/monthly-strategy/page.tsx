@@ -1,16 +1,48 @@
 
 "use client";
 
+import * as React from 'react';
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
+type StrategyContent = {
+  focus: string;
+  wins: string;
+  learnings: string;
+};
+
 export default function MonthlyStrategyPage() {
+  const [content, setContent] = React.useState<StrategyContent>({
+    focus: "",
+    wins: "",
+    learnings: "",
+  });
+
+  React.useEffect(() => {
+    try {
+      const savedContent = localStorage.getItem("monthlyStrategy");
+      if (savedContent) {
+        setContent(JSON.parse(savedContent));
+      }
+    } catch (error) {
+      console.error("Failed to parse from localStorage", error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    localStorage.setItem("monthlyStrategy", JSON.stringify(content));
+  }, [content]);
+
+  const handleContentChange = (field: keyof StrategyContent, value: string) => {
+    setContent(prev => ({ ...prev, [field]: value }));
+  };
+
   const strategySections = [
-    { title: "FOCO PRINCIPAL", placeholder: "Escreva aqui..." },
-    { title: "GRANDES VITÓRIAS", placeholder: "Escreva aqui..." },
-    { title: "APRENDIZADOS", placeholder: "Escreva aqui..." },
-  ];
+    { title: "FOCO PRINCIPAL", field: "focus", placeholder: "Escreva aqui...", value: content.focus },
+    { title: "GRANDES VITÓRIAS", field: "wins", placeholder: "Escreva aqui...", value: content.wins },
+    { title: "APRENDIZADOS", field: "learnings", placeholder: "Escreva aqui...", value: content.learnings },
+  ] as const;
 
   return (
     <div className="flex flex-col gap-8 h-full">
@@ -34,6 +66,8 @@ export default function MonthlyStrategyPage() {
               <Textarea
                 placeholder={section.placeholder}
                 className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0"
+                value={section.value}
+                onChange={(e) => handleContentChange(section.field, e.target.value)}
               />
             </CardContent>
           </Card>
@@ -46,3 +80,5 @@ export default function MonthlyStrategyPage() {
     </div>
   );
 }
+
+    

@@ -53,6 +53,39 @@ export default function FinancialManagementPage() {
   const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
 
+  React.useEffect(() => {
+    try {
+      const savedTransactions = localStorage.getItem('financialTransactions');
+      const savedWishlist = localStorage.getItem('financialWishlist');
+      const savedGoal = localStorage.getItem('financialGoal');
+
+      if (savedTransactions) {
+        setTransactions(JSON.parse(savedTransactions).map((t: any) => ({ ...t, date: new Date(t.date) })));
+      }
+      if (savedWishlist) {
+        setWishlist(JSON.parse(savedWishlist));
+      }
+      if (savedGoal) {
+        setEvolutionGoal(JSON.parse(savedGoal));
+      }
+    } catch (error) {
+      console.error("Failed to parse from localStorage", error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    localStorage.setItem('financialTransactions', JSON.stringify(transactions));
+  }, [transactions]);
+
+  React.useEffect(() => {
+    localStorage.setItem('financialWishlist', JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  React.useEffect(() => {
+    localStorage.setItem('financialGoal', JSON.stringify(evolutionGoal));
+  }, [evolutionGoal]);
+
+
   const handleAddTransaction = () => {
     const value = parseFloat(newTransactionValue);
     if (newTransactionDesc.trim() === "" || isNaN(value)) return;
@@ -340,3 +373,5 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
+
+    

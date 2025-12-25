@@ -24,9 +24,29 @@ const categoryButtons: { label: 'PES' | 'PRO' | 'MAT', category: TaskCategory }[
 ];
 
 export default function WeeklyPlanningPage() {
-  const [weeklyPlan, setWeeklyPlan] = React.useState<WeeklyDay[]>(initialWeeklyPlan);
+  const [weeklyPlan, setWeeklyPlan] = React.useState<WeeklyDay[]>([]);
   const [newTasks, setNewTasks] = React.useState<Record<string, string>>({});
   const [selectedCategories, setSelectedCategories] = React.useState<Record<string, TaskCategory>>({});
+
+  React.useEffect(() => {
+    try {
+      const savedPlan = localStorage.getItem("weeklyPlan");
+      if (savedPlan) {
+        setWeeklyPlan(JSON.parse(savedPlan));
+      } else {
+        setWeeklyPlan(initialWeeklyPlan);
+      }
+    } catch (error) {
+      console.error("Failed to parse from localStorage", error);
+      setWeeklyPlan(initialWeeklyPlan);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (weeklyPlan.length > 0) {
+      localStorage.setItem("weeklyPlan", JSON.stringify(weeklyPlan));
+    }
+  }, [weeklyPlan]);
 
   const handleNewTaskChange = (day: string, value: string) => {
     setNewTasks(prev => ({ ...prev, [day]: value }));
@@ -152,3 +172,5 @@ export default function WeeklyPlanningPage() {
     </div>
   );
 }
+
+    
