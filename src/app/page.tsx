@@ -165,8 +165,7 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Link href="/annual-goals" className="lg:col-span-2">
-          <Card className="p-6 flex flex-col justify-between group h-full">
+        <Card className="p-6 flex flex-col justify-between group h-full lg:col-span-2">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2">
                 <Heart className="h-6 w-6 text-muted-foreground" />
@@ -188,8 +187,7 @@ export default function Home() {
               <Button asChild variant="secondary" className="w-full"><Link href="/habit-tracker">VERIFICAR HÁBITOS</Link></Button>
               <Button asChild variant="outline" className="w-full"><Link href="/weekly-planning">PLAN SEMANAL</Link></Button>
             </div>
-          </Card>
-        </Link>
+        </Card>
         <Card className="p-8 flex flex-col justify-between items-center bg-primary text-primary-foreground text-center rounded-2xl relative overflow-hidden">
             <div className="absolute -bottom-16 -right-16">
                 <div className="w-48 h-48 border-4 border-black/5 rounded-full" />
