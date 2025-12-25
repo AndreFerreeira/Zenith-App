@@ -31,7 +31,11 @@ export default function MonthlyStrategyPage() {
   }, []);
 
   React.useEffect(() => {
-    localStorage.setItem("monthlyStrategy", JSON.stringify(content));
+    // This effect runs only when `content` changes, but not on the initial load.
+    // A check to prevent overwriting localStorage with initial empty state.
+    if (content.focus || content.wins || content.learnings) {
+        localStorage.setItem("monthlyStrategy", JSON.stringify(content));
+    }
   }, [content]);
 
   const handleContentChange = (field: keyof StrategyContent, value: string) => {
@@ -80,5 +84,3 @@ export default function MonthlyStrategyPage() {
     </div>
   );
 }
-
-    
