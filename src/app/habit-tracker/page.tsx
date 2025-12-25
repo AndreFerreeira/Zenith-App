@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Plus,
   CalendarDays,
+  X,
 } from "lucide-react";
 
 export default function HabitTrackerPage() {
@@ -55,6 +56,11 @@ export default function HabitTrackerPage() {
       })
     );
   };
+  
+  const handleDeleteHabit = (habitId: string) => {
+    setMonthlyHabits(monthlyHabits.filter(habit => habit.id !== habitId));
+  };
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -120,7 +126,14 @@ export default function HabitTrackerPage() {
                 {monthlyHabits.map((habit) => (
                   <React.Fragment key={habit.id}>
                     <tr>
-                      <td className="py-4 text-sm font-medium h-10">{habit.name}</td>
+                      <td className="py-4 text-sm font-medium h-10">
+                        <div className="relative group flex items-center">
+                          <span>{habit.name}</span>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto absolute right-0 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteHabit(habit.id)}>
+                              <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
                       {daysInMonth.map((day) => (
                         <td key={day} className="text-center h-10 py-4">
                           <Checkbox
