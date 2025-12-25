@@ -61,6 +61,9 @@ export default function IaAssistantPage() {
     let habits: string[] = [];
     let goals: string[] = [];
     let financialData = "Nenhum dado financeiro.";
+    let dreamRoutine = "Não definido.";
+    let coreValues = "Não definido.";
+
 
     try {
       // Habits
@@ -82,6 +85,15 @@ export default function IaAssistantPage() {
           });
         });
       }
+      
+      // Dream Routine
+      const savedRoutine = localStorage.getItem("dreamRoutine");
+      if(savedRoutine) dreamRoutine = JSON.parse(savedRoutine);
+
+      // Core Values
+      const savedValues = localStorage.getItem("coreValues");
+      if(savedValues) coreValues = JSON.parse(savedValues);
+
 
       // Financials
       const savedTransactions = localStorage.getItem("financialTransactions");
@@ -96,7 +108,7 @@ export default function IaAssistantPage() {
       console.error("Failed to read data from localStorage for AI assistant", e);
     }
     
-    return { habits, goals, financialData };
+    return { habits, goals, financialData, dreamRoutine, coreValues };
   };
 
   const handleSendMessage = async () => {
@@ -128,7 +140,8 @@ export default function IaAssistantPage() {
 
     const contextData = getContextData();
     const input: GenerateContentFromDataInput = {
-      ...contextData,
+      habits: contextData.habits,
+      goals: contextData.goals,
       theme: contentTheme,
       platform: contentPlatform,
     };

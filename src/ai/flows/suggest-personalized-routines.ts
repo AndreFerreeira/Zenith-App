@@ -17,6 +17,8 @@ const SuggestPersonalizedRoutinesInputSchema = z.object({
   habits: z.array(z.string()).describe('A list of tracked habits.'),
   goals: z.array(z.string()).describe('A list of user goals.'),
   financialData: z.string().describe('A summary of the user financial data.'),
+  dreamRoutine: z.string().describe('The user\'s description of their ideal or "dream" routine.'),
+  coreValues: z.string().describe('A list of the user\'s core values (e.g., Integrity, Freedom, Family).')
 });
 
 export type SuggestPersonalizedRoutinesInput = z.infer<
@@ -38,16 +40,22 @@ const suggestPersonalizedRoutinesPrompt = ai.definePrompt({
   name: 'suggestPersonalizedRoutinesPrompt',
   input: {schema: SuggestPersonalizedRoutinesInputSchema},
   output: {schema: SuggestPersonalizedRoutinesOutputSchema},
-  prompt: `Analyze the following user data to suggest personalized daily and weekly routines.
+  prompt: `You are an expert life and productivity coach.
+Analyze the following user data to suggest personalized and structured daily and weekly routines.
 
-Tracked Habits: {{habits}}
-Goals: {{goals}}
+The routines must be aligned with the user's core values, their long-term goals, and their dream routine.
+Use their current habits and financial data as a baseline for what is achievable.
+
+User's Core Values: {{coreValues}}
+User's Dream Routine: {{dreamRoutine}}
+Tracked Habits: {{#each habits}}- {{this}}{{/each}}
+Goals: {{#each goals}}- {{this}}{{/each}}
 Financial Data: {{financialData}}
 
-Based on this information, suggest a daily and weekly routine that optimizes productivity and financial well-being.
+Based on all this information, create a realistic but ambitious plan to help the user move towards their dream routine and goals, respecting their core values.
 
-Daily Routine:
-Weekly Routine:`,
+Suggest a Daily Routine:
+Suggest a Weekly Routine:`,
 });
 
 // Define the flow
