@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ import {
   ArrowUpRight,
   ListTodo,
   Landmark,
+  X,
+  Trash2,
 } from "lucide-react";
 import {
   ChartContainer,
@@ -27,6 +30,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import type { Transaction, WishlistItem } from '@/lib/data';
+import { Badge } from '@/components/ui/badge';
 
 const chartData = [
   { month: "Jan", balance: 186 },
@@ -45,6 +50,59 @@ const chartConfig = {
 };
 
 export default function FinancialManagementPage() {
+  const [evolutionGoal, setEvolutionGoal] = React.useState(50000);
+  const [newTransactionDesc, setNewTransactionDesc] = React.useState("");
+  const [newTransactionValue, setNewTransactionValue] = React.useState("");
+  const [newTransactionType, setNewTransactionType] = React.useState<"entrada" | "saida">("saida");
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [newWishlistItem, setNewWishlistItem] = React.useState("");
+  const [wishlist, setWishlist] = React.useState<WishlistItem[]>([]);
+
+  const handleAddTransaction = () => {
+    const value = parseFloat(newTransactionValue);
+    if (newTransactionDesc.trim() === "" || isNaN(value)) return;
+
+    const newTransaction: Transaction = {
+      id: Math.random().toString(),
+      description: newTransactionDesc,
+      amount: value,
+      type: newTransactionType,
+      date: new Date(),
+    };
+
+    setTransactions([...transactions, newTransaction]);
+    setNewTransactionDesc("");
+    setNewTransactionValue("");
+  };
+
+  const handleAddWishlistItem = () => {
+    if (newWishlistItem.trim() === "") return;
+    const newItem: WishlistItem = {
+      id: Math.random().toString(),
+      name: newWishlistItem,
+    };
+    setWishlist([...wishlist, newItem]);
+    setNewWishlistItem("");
+  };
+
+  const handleRemoveWishlistItem = (id: string) => {
+    setWishlist(wishlist.filter(item => item.id !== id));
+  };
+  
+  const totalGains = transactions
+    .filter(t => t.type === 'entrada')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalExpenses = transactions
+    .filter(t => t.type === 'saida')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const currentBalance = totalGains - totalExpenses;
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <Header />
@@ -69,7 +127,12 @@ export default function FinancialManagementPage() {
             <TrendingUp className="h-5 w-5 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 50.000,00</div>
+             <Input 
+                type="number" 
+                value={evolutionGoal}
+                onChange={(e) => setEvolutionGoal(parseFloat(e.target.value))}
+                className="bg-transparent border-none text-2xl font-bold p-0 h-auto focus-visible:ring-0"
+              />
           </CardContent>
         </Card>
         <Card className="bg-primary text-primary-foreground">
@@ -78,7 +141,7 @@ export default function FinancialManagementPage() {
             <Wallet className="h-5 w-5" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 0,00</div>
+            <div className="text-2xl font-bold">{formatCurrency(currentBalance)}</div>
           </CardContent>
         </Card>
       </div>
@@ -93,9 +156,9 @@ export default function FinancialManagementPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex items-center gap-2">
-              <Input placeholder="Descrição..." className="bg-card border-none" />
-              <Input placeholder="Valor..." type="number" className="bg-card border-none w-40" />
-              <Select defaultValue="saida">
+              <Input placeholder="Descrição..." className="bg-card border-none" value={newTransactionDesc} onChange={(e) => setNewTransactionDesc(e.target.value)} />
+              <Input placeholder="Valor..." type="number" className="bg-card border-none w-40" value={newTransactionValue} onChange={(e) => setNewTransactionValue(e.target.value)} />
+              <Select value={newTransactionType} onValueChange={(value: "entrada" | "saida") => setNewTransactionType(value)}>
                 <SelectTrigger className="w-32 bg-card border-none">
                   <SelectValue />
                 </SelectTrigger>
@@ -104,7 +167,7 @@ export default function FinancialManagementPage() {
                   <SelectItem value="entrada">Entrada</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="icon" className="h-9 w-9 flex-shrink-0">
+              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleAddTransaction}>
                 <Plus className="h-5 w-5" />
               </Button>
             </CardContent>
@@ -117,17 +180,35 @@ export default function FinancialManagementPage() {
                   Histórico de Movimentações
                 </CardTitle>
                 <div className="text-sm">
-                  <span className="text-green-400">GANHOS R$ 0,00</span>
+                  <span className="text-green-400">GANHOS {formatCurrency(totalGains)}</span>
                   <span className="text-muted-foreground mx-2">|</span>
-                  <span className="text-red-400">GASTOS R$ 0,00</span>
+                  <span className="text-red-400">GASTOS {formatCurrency(totalExpenses)}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-              <Landmark className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground">
-                Nenhuma transação registrada.
-              </p>
+            <CardContent className="flex-grow flex flex-col text-center overflow-y-auto">
+              {transactions.length === 0 ? (
+                <div className="flex-grow flex flex-col items-center justify-center">
+                  <Landmark className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground">
+                    Nenhuma transação registrada.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {transactions.map(t => (
+                    <div key={t.id} className="flex justify-between items-center bg-card p-2 rounded-md">
+                      <div>
+                        <p className="text-sm font-medium text-left">{t.description}</p>
+                        <p className="text-xs text-muted-foreground text-left">{t.date.toLocaleDateString()}</p>
+                      </div>
+                      <Badge variant={t.type === 'entrada' ? 'default' : 'destructive'} className={t.type === 'entrada' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}>
+                        {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -168,11 +249,24 @@ export default function FinancialManagementPage() {
                         Wishlist
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                    <p className="text-muted-foreground mb-4">SUA LISTA ESTÁ VAZIA</p>
-                    <div className="flex items-center gap-2 w-full">
-                        <Input placeholder="Desejo..." className="bg-card border-none h-9" />
-                        <Button size="icon" className="h-9 w-9 flex-shrink-0">
+                <CardContent className="flex-grow flex flex-col text-center">
+                    {wishlist.length === 0 ? (
+                      <p className="text-muted-foreground mb-4 m-auto">SUA LISTA ESTÁ VAZIA</p>
+                    ) : (
+                      <div className='space-y-2 overflow-y-auto'>
+                      {wishlist.map(item => (
+                        <div key={item.id} className="flex items-center justify-between bg-card p-2 rounded-md group">
+                          <span className="text-sm">{item.name}</span>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveWishlistItem(item.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 w-full mt-auto">
+                        <Input placeholder="Desejo..." className="bg-card border-none h-9" value={newWishlistItem} onChange={e => setNewWishlistItem(e.target.value)} />
+                        <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleAddWishlistItem}>
                             <Plus className="h-5 w-5" />
                         </Button>
                     </div>
@@ -183,3 +277,5 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
+
+    

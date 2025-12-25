@@ -82,3 +82,18 @@ export const monthlyHabits: MonthlyHabit[] = [
         completedDays: [3, 6, 7, 13, 14, 16, 17, 19, 21, 23, 24, 26, 27, 31]
     }
 ]
+
+export type Transaction = {
+  id: string;
+  description: string;
+  amount: number;
+  type: 'entrada' | 'saida';
+  date: Date;
+};
+
+export type WishlistItem = {
+  id: string;
+  name: string;
+};
+
+    
