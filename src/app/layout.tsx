@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background">
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 p-8 overflow-y-auto h-screen">
+          <main className="flex-1 p-8 overflow-y-auto h-screen flex flex-col">
             {children}
           </main>
         </div>

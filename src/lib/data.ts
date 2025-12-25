@@ -61,3 +61,22 @@ export const weeklyPlan: WeeklyDay[] = [
     { day: 'Sábado', tasks: [] },
     { day: 'Domingo', tasks: [] },
 ]
+
+export type MonthlyHabit = {
+    id: string;
+    name: string;
+    completedDays: number[];
+}
+
+export const monthlyHabits: MonthlyHabit[] = [
+    {
+        id: 'mh1',
+        name: 'TESTE',
+        completedDays: [1, 2, 4, 5, 8, 9, 10, 11, 12, 15, 18, 20, 22, 25, 28, 29, 30]
+    },
+    {
+        id: 'mh2',
+        name: 'LEITURA',
+        completedDays: [3, 6, 7, 13, 14, 16, 17, 19, 21, 23, 24, 26, 27, 31]
+    }
+]
