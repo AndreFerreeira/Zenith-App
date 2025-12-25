@@ -41,7 +41,7 @@ const initialGoalSections: GoalSection[] = [
 ];
 
 export default function AnnualGoalsPage() {
-  const [goalSections, setGoalSections] = React.useState<GoalSection[]>([]);
+  const [goalSections, setGoalSections] = React.useState<GoalSection[]>(initialGoalSections);
   const [newGoals, setNewGoals] = React.useState<Record<string, string>>({
     Pessoais: "",
     Profissionais: "",
@@ -57,10 +57,17 @@ export default function AnnualGoalsPage() {
       const savedValues = localStorage.getItem("coreValues");
       
       if (savedGoals) {
-        setGoalSections(JSON.parse(savedGoals));
+        const parsedGoals: GoalSection[] = JSON.parse(savedGoals);
+        // We need to merge the saved goals with the initial sections to keep the icons
+        const updatedSections = initialGoalSections.map(section => {
+          const savedSection = parsedGoals.find(s => s.title === section.title);
+          return savedSection ? { ...section, goals: savedSection.goals } : section;
+        });
+        setGoalSections(updatedSections);
       } else {
         setGoalSections(initialGoalSections);
       }
+
       if (savedRoutine) {
         setDreamRoutine(JSON.parse(savedRoutine));
       }
@@ -74,17 +81,22 @@ export default function AnnualGoalsPage() {
   }, []);
 
   React.useEffect(() => {
-    if (goalSections.length > 0) {
-      localStorage.setItem("annualGoals", JSON.stringify(goalSections));
+    // Prevent writing initial empty state to localStorage
+    if (goalSections.some(s => s.goals.length > initialGoalSections.find(is => is.title === s.title)!.goals.length) || goalSections.some(s => s.goals.some(g => g.completed))) {
+       localStorage.setItem("annualGoals", JSON.stringify(goalSections.map(({ icon, ...rest }) => rest)));
     }
   }, [goalSections]);
   
   React.useEffect(() => {
-    localStorage.setItem("dreamRoutine", JSON.stringify(dreamRoutine));
+    if (dreamRoutine) {
+      localStorage.setItem("dreamRoutine", JSON.stringify(dreamRoutine));
+    }
   }, [dreamRoutine]);
 
   React.useEffect(() => {
-    localStorage.setItem("coreValues", JSON.stringify(coreValues));
+    if (coreValues) {
+      localStorage.setItem("coreValues", JSON.stringify(coreValues));
+    }
   }, [coreValues]);
 
 
@@ -232,5 +244,3 @@ export default function AnnualGoalsPage() {
     </div>
   );
 }
-
-    
