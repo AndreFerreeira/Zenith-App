@@ -31,7 +31,7 @@ import {
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import type { Transaction, WishlistItem } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-import { format, getMonth, getYear, startOfMonth, parse } from 'date-fns';
+import { format, getMonth, getYear, startOfMonth, parse, set } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const chartConfig = {
@@ -90,12 +90,14 @@ export default function FinancialManagementPage() {
     const value = parseFloat(newTransactionValue);
     if (newTransactionDesc.trim() === "" || isNaN(value)) return;
 
+    const transactionDate = set(new Date(), { year: selectedYear, month: selectedMonth, date: 1 });
+
     const newTransaction: Transaction = {
       id: Math.random().toString(),
       description: newTransactionDesc,
       amount: value,
       type: newTransactionType,
-      date: new Date(),
+      date: transactionDate,
     };
 
     setTransactions([...transactions, newTransaction]);
@@ -136,16 +138,19 @@ export default function FinancialManagementPage() {
     label: format(new Date(0, i), 'MMMM', { locale: ptBR }),
   }));
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const years = Array.from({ length: 7 }, (_, i) => 2024 + i);
   
   const filteredTransactions = transactions.filter(
     (t) => getMonth(t.date) === selectedMonth && getYear(t.date) === selectedYear
   );
 
   const chartData = React.useMemo(() => {
+    const allTransactions = [...transactions];
+    allTransactions.sort((a,b) => a.date.getTime() - b.date.getTime());
+
     const monthlyData: Record<string, { gains: number; expenses: number }> = {};
 
-    transactions.forEach(t => {
+    allTransactions.forEach(t => {
       const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
       if (!monthlyData[monthKey]) {
         monthlyData[monthKey] = { gains: 0, expenses: 0 };
@@ -378,3 +383,5 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
+
+    
