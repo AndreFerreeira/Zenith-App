@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Sidebar } from '@/components/layout/sidebar';
+import { FloatingNav } from '@/components/layout/floating-nav';
 
 export const metadata: Metadata = {
   title: 'Zenith Mastery',
@@ -24,10 +25,11 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background">
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 p-8 overflow-y-auto h-screen flex flex-col">
+          <main className="flex-1 p-8 overflow-y-auto h-screen flex flex-col pb-28">
             {children}
           </main>
         </div>
+        <FloatingNav />
         <Toaster />
       </body>
     </html>
