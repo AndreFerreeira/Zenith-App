@@ -5,18 +5,35 @@ import * as React from "react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { weeklyPlan as initialWeeklyPlan } from "@/lib/data";
-import type { WeeklyDay, WeeklyTask } from "@/lib/data";
+import type { WeeklyDay, WeeklyTask, TaskCategory } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Plus, X, NotebookPen } from "lucide-react";
 
+const categoryMapping: Record<string, TaskCategory> = {
+  PES: 'PESSOAL',
+  PRO: 'PROFISSIONAL',
+  MAT: 'MATERIAL',
+};
+
+const categoryButtons: { label: 'PES' | 'PRO' | 'MAT', category: TaskCategory }[] = [
+    { label: 'PES', category: 'PESSOAL' },
+    { label: 'PRO', category: 'PROFISSIONAL' },
+    { label: 'MAT', category: 'MATERIAL' },
+];
+
 export default function WeeklyPlanningPage() {
   const [weeklyPlan, setWeeklyPlan] = React.useState<WeeklyDay[]>(initialWeeklyPlan);
   const [newTasks, setNewTasks] = React.useState<Record<string, string>>({});
+  const [selectedCategories, setSelectedCategories] = React.useState<Record<string, TaskCategory>>({});
 
   const handleNewTaskChange = (day: string, value: string) => {
     setNewTasks(prev => ({ ...prev, [day]: value }));
+  };
+
+  const handleCategoryChange = (day: string, category: TaskCategory) => {
+    setSelectedCategories(prev => ({ ...prev, [day]: category }));
   };
 
   const handleAddTask = (day: string) => {
@@ -25,7 +42,7 @@ export default function WeeklyPlanningPage() {
 
     const newTask: WeeklyTask = {
       name: taskName.trim(),
-      category: 'PESSOAL', // Default category for now
+      category: selectedCategories[day] || 'PESSOAL',
     };
 
     setWeeklyPlan(prevPlan =>
@@ -77,7 +94,7 @@ export default function WeeklyPlanningPage() {
                     } className={
                       task.category === 'PESSOAL' ? 'bg-blue-500/20 text-blue-300 border-none' :
                       task.category === 'PROFISSIONAL' ? 'bg-purple-500/20 text-purple-300 border-none' :
-                      'border-dashed'
+                      'bg-orange-500/20 text-orange-300 border-none'
                     }>
                       {task.category}
                     </Badge>
@@ -97,9 +114,17 @@ export default function WeeklyPlanningPage() {
               
               <div className="mt-4">
                 <div className="flex items-center gap-2 mb-2">
-                    <Button variant="outline" size="sm" className="text-xs h-7">PES</Button>
-                    <Button variant="outline" size="sm" className="text-xs h-7">PRO</Button>
-                    <Button variant="outline" size="sm" className="text-xs h-7">MAT</Button>
+                    {categoryButtons.map(catBtn => (
+                         <Button 
+                            key={catBtn.label}
+                            variant={(selectedCategories[day.day] || 'PESSOAL') === catBtn.category ? 'secondary' : 'outline'} 
+                            size="sm" 
+                            className="text-xs h-7"
+                            onClick={() => handleCategoryChange(day.day, catBtn.category)}
+                         >
+                            {catBtn.label}
+                        </Button>
+                    ))}
                 </div>
                 <div className="flex items-center gap-2">
                     <Input 

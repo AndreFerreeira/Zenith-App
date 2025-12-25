@@ -31,9 +31,11 @@ export const annualGoals: Goal[] = [
     { id: 'ag3', name: 'Learn a new programming language', progress: 15 },
 ];
 
+export type TaskCategory = 'PESSOAL' | 'PROFISSIONAL' | 'MATERIAL';
+
 export type WeeklyTask = {
     name: string;
-    category: 'PESSOAL' | 'PROFISSIONAL' | 'MATINAL';
+    category: TaskCategory;
 };
 
 export type WeeklyDay = {
