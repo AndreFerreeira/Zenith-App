@@ -68,31 +68,36 @@ export default function HabitTrackerPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="grid gap-y-4" style={{ gridTemplateColumns: `100px repeat(${daysInMonth.length}, 40px)`}}>
+            <div className="grid gap-y-2" style={{ gridTemplateColumns: `100px repeat(${daysInMonth.length}, 40px) 1fr`}}>
               {/* Header */}
               <div className="text-xs text-muted-foreground font-semibold flex items-end">OBJETIVO</div>
               {daysInMonth.map((day) => (
-                <div key={day} className="text-xs text-muted-foreground font-semibold flex items-center justify-center">
+                <div key={day} className="text-xs text-muted-foreground font-semibold flex items-center justify-center h-8">
                   {String(day).padStart(2, "0")}
                 </div>
               ))}
+              <div />
 
               {/* Habits */}
               {monthlyHabits.map((habit) => (
                 <React.Fragment key={habit.id}>
-                  <div className="flex items-center text-sm font-medium">{habit.name}</div>
+                  <div className="flex items-center text-sm font-medium h-10">{habit.name}</div>
                   {daysInMonth.map((day) => (
-                    <div key={day} className="flex items-center justify-center">
+                    <div key={day} className="flex items-center justify-center h-10">
                       <Checkbox 
                         className="w-7 h-7 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground rounded-md"
                         checked={habit.completedDays.includes(day)}
                       />
                     </div>
                   ))}
-                  <div className="col-span-1"></div>
+                  <div />
+                  
+                  {/* Progress Bar Row */}
+                  <div />
                   <div className="col-span-31 mt-[-10px] mb-2">
                      <Progress value={(habit.completedDays.length / 31) * 100} className="h-2" />
                   </div>
+                  <div />
                 </React.Fragment>
               ))}
             </div>
