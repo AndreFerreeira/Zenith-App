@@ -105,6 +105,10 @@ export default function FinancialManagementPage() {
     setNewTransactionValue("");
   };
 
+  const handleRemoveTransaction = (id: string) => {
+    setTransactions(transactions.filter(t => t.id !== id));
+  };
+
   const handleAddWishlistItem = () => {
     if (newWishlistItem.trim() === "") return;
     const newItem: WishlistItem = {
@@ -147,36 +151,39 @@ export default function FinancialManagementPage() {
   const chartData = React.useMemo(() => {
     const allTransactions = [...transactions];
     allTransactions.sort((a,b) => a.date.getTime() - b.date.getTime());
-
-    const monthlyData: Record<string, { gains: number; expenses: number }> = {};
-
+  
+    const monthlyData: { [key: string]: number } = {};
+  
+    // Initialize all months of all years present in transactions
     allTransactions.forEach(t => {
       const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
       if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { gains: 0, expenses: 0 };
-      }
-      if (t.type === 'entrada') {
-        monthlyData[monthKey].gains += t.amount;
-      } else {
-        monthlyData[monthKey].expenses += t.amount;
+        monthlyData[monthKey] = 0;
       }
     });
-
+    
+    // Calculate net change for each month
+    allTransactions.forEach(t => {
+      const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
+      if (t.type === 'entrada') {
+        monthlyData[monthKey] += t.amount;
+      } else {
+        monthlyData[monthKey] -= t.amount;
+      }
+    });
+  
     const sortedMonthKeys = Object.keys(monthlyData).sort();
     
     let accumulatedBalance = 0;
     const chartPoints = sortedMonthKeys.map(monthKey => {
-      const { gains, expenses } = monthlyData[monthKey];
-      accumulatedBalance += gains - expenses;
-      
+      accumulatedBalance += monthlyData[monthKey];
       const date = parse(monthKey, 'yyyy-MM', new Date());
-
       return {
         month: format(date, 'MMM', { locale: ptBR }),
         balance: accumulatedBalance,
       };
     });
-
+  
     return chartPoints.slice(-6); // Show last 6 months
   }, [transactions]);
 
@@ -302,14 +309,19 @@ export default function FinancialManagementPage() {
               ) : (
                 <div className="space-y-2">
                   {filteredTransactions.map(t => (
-                    <div key={t.id} className="flex justify-between items-center bg-card p-2 rounded-md">
+                    <div key={t.id} className="flex justify-between items-center bg-card p-2 rounded-md group">
                       <div>
                         <p className="text-sm font-medium text-left">{t.description}</p>
                         <p className="text-xs text-muted-foreground text-left">{t.date.toLocaleDateString()}</p>
                       </div>
-                      <Badge variant={t.type === 'entrada' ? 'default' : 'destructive'} className={t.type === 'entrada' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}>
-                        {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={t.type === 'entrada' ? 'default' : 'destructive'} className={t.type === 'entrada' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}>
+                          {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
+                        </Badge>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveTransaction(t.id)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -383,5 +395,3 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
-
-    
