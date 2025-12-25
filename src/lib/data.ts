@@ -1,3 +1,4 @@
+
 export type Habit = {
   id: string;
   name: string;
@@ -29,3 +30,34 @@ export const annualGoals: Goal[] = [
     { id: 'ag2', name: 'Save $5,000 for vacation', progress: 50 },
     { id: 'ag3', name: 'Learn a new programming language', progress: 15 },
 ];
+
+export type WeeklyTask = {
+    name: string;
+    category: 'PESSOAL' | 'PROFISSIONAL' | 'MATINAL';
+};
+
+export type WeeklyDay = {
+    day: string;
+    tasks: WeeklyTask[];
+}
+
+export const weeklyPlan: WeeklyDay[] = [
+    {
+        day: 'Segunda',
+        tasks: [
+            { name: 'Treino matinal', category: 'PESSOAL' },
+            { name: 'Reunião de alinhamento', category: 'PROFISSIONAL' },
+        ]
+    },
+    {
+        day: 'Terça',
+        tasks: [
+            { name: 'Estudos React', category: 'PROFISSIONAL' },
+        ]
+    },
+    { day: 'Quarta', tasks: [] },
+    { day: 'Quinta', tasks: [] },
+    { day: 'Sexta', tasks: [] },
+    { day: 'Sábado', tasks: [] },
+    { day: 'Domingo', tasks: [] },
+]

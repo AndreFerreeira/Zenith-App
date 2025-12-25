@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,7 +11,7 @@ import {
   Target,
   Wallet,
   Calendar,
-  CircleHelp,
+  CheckCircle,
   SlidersHorizontal,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -21,7 +22,7 @@ const navItems = [
   { name: "METAS DO ANO", icon: Target, href: "/annual-goals" },
   { name: "GESTÃO FINANCEIRA", icon: Wallet, href: "/financial-management" },
   { name: "ESTRATÉGIA MENSAL", icon: Calendar, href: "/monthly-strategy" },
-  { name: "HABIT TRACKER", icon: CircleHelp, href: "/habit-tracker" },
+  { name: "HABIT TRACKER", icon: CheckCircle, href: "/habit-tracker" },
   { name: "PLANEJAMENTO SEMANAL", icon: SlidersHorizontal, href: "/weekly-planning" },
 ];
 
@@ -62,23 +63,22 @@ export function Sidebar() {
         <div className="text-center">
             <p className="text-xs text-muted-foreground mb-2">CICLO ANUAL</p>
             <div className="flex justify-center items-center relative w-24 h-24 mx-auto">
-                <Progress value={98} className="w-24 h-24 absolute" />
-                <svg className="w-24 h-24 transform -rotate-90">
-                    <circle className="text-muted-foreground/10" strokeWidth="8" stroke="currentColor" fill="transparent" r="40" cx="48" cy="48" />
+                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                    <circle className="text-muted-foreground/10" strokeWidth="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
                     <circle
                         className="text-primary"
                         strokeWidth="8"
                         strokeDasharray={2 * Math.PI * 40}
-                        strokeDashoffset={(2 * Math.PI * 40) - (98 / 100) * (2 * Math.PI * 40)}
+                        strokeDashoffset={(2 * Math.PI * 40) - (33 / 100) * (2 * Math.PI * 40)}
                         strokeLinecap="round"
                         stroke="currentColor"
                         fill="transparent"
                         r="40"
-                        cx="48"
-                        cy="48"
+                        cx="50"
+                        cy="50"
                     />
                 </svg>
-                <span className="absolute text-xl font-bold">98%</span>
+                <span className="absolute text-xl font-bold">33%</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">META CONCLUÍDA</p>
         </div>
