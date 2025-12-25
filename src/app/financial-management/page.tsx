@@ -21,7 +21,6 @@ import {
   ArrowUpRight,
   ListTodo,
   Landmark,
-  X,
   Trash2,
 } from "lucide-react";
 import {
@@ -32,15 +31,8 @@ import {
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import type { Transaction, WishlistItem } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-
-const chartData = [
-  { month: "Jan", balance: 186 },
-  { month: "Feb", balance: 305 },
-  { month: "Mar", balance: 237 },
-  { month: "Apr", balance: 173 },
-  { month: "May", balance: 209 },
-  { month: "Jun", balance: 214 },
-];
+import { format, getMonth, getYear, startOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const chartConfig = {
   balance: {
@@ -57,6 +49,9 @@ export default function FinancialManagementPage() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [newWishlistItem, setNewWishlistItem] = React.useState("");
   const [wishlist, setWishlist] = React.useState<WishlistItem[]>([]);
+
+  const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
 
   const handleAddTransaction = () => {
     const value = parseFloat(newTransactionValue);
@@ -103,6 +98,46 @@ export default function FinancialManagementPage() {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    value: i,
+    label: format(new Date(0, i), 'MMMM', { locale: ptBR }),
+  }));
+
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  
+  const filteredTransactions = transactions.filter(
+    (t) => getMonth(t.date) === selectedMonth && getYear(t.date) === selectedYear
+  );
+
+  const chartData = React.useMemo(() => {
+    const monthlyBalances: Record<string, number> = {};
+
+    transactions.forEach(t => {
+      const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
+      if (!monthlyBalances[monthKey]) {
+        monthlyBalances[monthKey] = 0;
+      }
+    });
+
+    let accumulatedBalance = 0;
+    const sortedMonthKeys = Object.keys(monthlyBalances).sort();
+
+    const chartPoints = sortedMonthKeys.map(monthKey => {
+      const monthTransactions = transactions.filter(t => format(startOfMonth(t.date), 'yyyy-MM') === monthKey);
+      const monthGains = monthTransactions.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
+      const monthExpenses = monthTransactions.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
+      accumulatedBalance += monthGains - monthExpenses;
+
+      return {
+        month: format(new Date(monthKey + '-02'), 'MMM', { locale: ptBR }),
+        balance: accumulatedBalance,
+      };
+    });
+
+    return chartPoints.slice(-6); // Show last 6 months
+  }, [transactions]);
+
+
   return (
     <div className="flex flex-col gap-8">
       <Header />
@@ -130,7 +165,7 @@ export default function FinancialManagementPage() {
              <Input 
                 type="number" 
                 value={evolutionGoal}
-                onChange={(e) => setEvolutionGoal(parseFloat(e.target.value))}
+                onChange={(e) => setEvolutionGoal(parseFloat(e.target.value) || 0)}
                 className="bg-transparent border-none text-2xl font-bold p-0 h-auto focus-visible:ring-0"
               />
           </CardContent>
@@ -176,27 +211,54 @@ export default function FinancialManagementPage() {
           <Card className="bg-card-foreground/5 border-none h-[300px] flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle className="text-base font-semibold">
+                 <CardTitle className="text-base font-semibold">
                   Histórico de Movimentações
                 </CardTitle>
-                <div className="text-sm">
-                  <span className="text-green-400">GANHOS {formatCurrency(totalGains)}</span>
-                  <span className="text-muted-foreground mx-2">|</span>
-                  <span className="text-red-400">GASTOS {formatCurrency(totalExpenses)}</span>
+                <div className="flex items-center gap-2">
+                   <Select
+                    value={String(selectedMonth)}
+                    onValueChange={(value) => setSelectedMonth(Number(value))}
+                  >
+                    <SelectTrigger className="w-36 bg-card border-none h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={String(month.value)}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={String(selectedYear)}
+                    onValueChange={(value) => setSelectedYear(Number(value))}
+                  >
+                    <SelectTrigger className="w-24 bg-card border-none h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col text-center overflow-y-auto">
-              {transactions.length === 0 ? (
+              {filteredTransactions.length === 0 ? (
                 <div className="flex-grow flex flex-col items-center justify-center">
                   <Landmark className="h-12 w-12 text-muted-foreground/30 mb-4" />
                   <p className="text-muted-foreground">
-                    Nenhuma transação registrada.
+                    Nenhuma transação para este período.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {transactions.map(t => (
+                  {filteredTransactions.map(t => (
                     <div key={t.id} className="flex justify-between items-center bg-card p-2 rounded-md">
                       <div>
                         <p className="text-sm font-medium text-left">{t.description}</p>
@@ -226,15 +288,16 @@ export default function FinancialManagementPage() {
                     <ChartContainer config={chartConfig} className="w-full h-full">
                         <BarChart accessibilityLayer data={chartData}>
                             <XAxis
-                            dataKey="month"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                            tickFormatter={(value) => value.slice(0, 3)}
+                              dataKey="month"
+                              tickLine={false}
+                              tickMargin={10}
+                              axisLine={false}
+                              tickFormatter={(value) => value.slice(0, 3)}
                             />
+                             <YAxis hide={true} />
                             <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
+                              cursor={false}
+                              content={<ChartTooltipContent hideLabel formatter={(value) => formatCurrency(value as number)} />}
                             />
                             <Bar dataKey="balance" fill="var(--color-balance)" radius={4} />
                         </BarChart>
@@ -265,7 +328,7 @@ export default function FinancialManagementPage() {
                       </div>
                     )}
                     <div className="flex items-center gap-2 w-full mt-auto">
-                        <Input placeholder="Desejo..." className="bg-card border-none h-9" value={newWishlistItem} onChange={e => setNewWishlistItem(e.target.value)} />
+                        <Input placeholder="Desejo..." className="bg-card border-none h-9" value={newWishlistItem} onChange={e => setNewWishlistItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddWishlistItem()} />
                         <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleAddWishlistItem}>
                             <Plus className="h-5 w-5" />
                         </Button>
@@ -277,5 +340,3 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
-
-    
