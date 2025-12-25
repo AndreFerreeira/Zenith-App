@@ -27,8 +27,10 @@ export type SuggestPersonalizedRoutinesInput = z.infer<
 
 // Define the output schema
 const SuggestPersonalizedRoutinesOutputSchema = z.object({
-  dailyRoutine: z.string().describe('A suggested daily routine.'),
-  weeklyRoutine: z.string().describe('A suggested weekly routine.'),
+  dailyRoutine: z.string().describe('A suggested daily routine in text format.'),
+  weeklyRoutine: z.string().describe('A suggested weekly routine in text format.'),
+  suggestedHabits: z.array(z.string()).describe('A list of specific, actionable habits suggested for the user.'),
+  suggestedGoals: z.array(z.string()).describe('A list of specific, actionable goals suggested for the user.'),
 });
 
 export type SuggestPersonalizedRoutinesOutput = z.infer<
@@ -41,7 +43,7 @@ const suggestPersonalizedRoutinesPrompt = ai.definePrompt({
   input: {schema: SuggestPersonalizedRoutinesInputSchema},
   output: {schema: SuggestPersonalizedRoutinesOutputSchema},
   prompt: `You are an expert life and productivity coach.
-Analyze the following user data to suggest personalized and structured daily and weekly routines.
+Analyze the following user data to suggest personalized and structured daily and weekly routines, along with specific, actionable habits and goals.
 
 The routines must be aligned with the user's core values, their long-term goals, and their dream routine.
 Use their current habits and financial data as a baseline for what is achievable.
@@ -54,8 +56,11 @@ Financial Data: {{financialData}}
 
 Based on all this information, create a realistic but ambitious plan to help the user move towards their dream routine and goals, respecting their core values.
 
-Suggest a Daily Routine:
-Suggest a Weekly Routine:`,
+- Suggest a Daily Routine (as a block of text).
+- Suggest a Weekly Routine (as a block of text).
+- Suggest 3-5 specific habits as a list for the 'suggestedHabits' field.
+- Suggest 2-3 specific, larger goals as a list for the 'suggestedGoals' field.
+`,
 });
 
 // Define the flow
