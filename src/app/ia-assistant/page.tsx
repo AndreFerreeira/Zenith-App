@@ -7,22 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrainCircuit, Send, SparklesIcon, User, Mic, FileText, NotepadText, LoaderCircle } from "lucide-react";
-import { getAiSuggestions, generateSocialPost } from '@/app/actions';
+import { getAiSuggestions } from '@/app/actions';
 import type { SuggestPersonalizedRoutinesInput, SuggestPersonalizedRoutinesOutput } from '@/ai/flows/suggest-personalized-routines';
-import type { GenerateContentFromDataInput } from '@/ai/flows/generate-content-from-data';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 
 
 type Message = {
   role: 'user' | 'assistant';
   content: string | SuggestPersonalizedRoutinesOutput;
 };
-
-type SocialPlatform = 'linkedin' | 'instagram' | 'email';
 
 export default function IaAssistantPage() {
   const [messages, setMessages] = React.useState<Message[]>([]);
@@ -31,13 +26,6 @@ export default function IaAssistantPage() {
   
   // State for Notes tab
   const [notes, setNotes] = React.useState('');
-
-  // State for Content tab
-  const [contentTheme, setContentTheme] = React.useState('');
-  const [contentPlatform, setContentPlatform] = React.useState<SocialPlatform>('instagram');
-  const [generatedContent, setGeneratedContent] = React.useState('');
-  const [isGeneratingContent, setIsGeneratingContent] = React.useState(false);
-
 
   // Load notes from localStorage
   React.useEffect(() => {
@@ -132,39 +120,6 @@ export default function IaAssistantPage() {
     setIsLoading(false);
   };
   
-  const handleGenerateContent = async () => {
-    if (!contentTheme.trim() || isGeneratingContent) return;
-
-    setIsGeneratingContent(true);
-    setGeneratedContent('');
-
-    const contextData = getContextData();
-    const input: GenerateContentFromDataInput = {
-      habits: contextData.habits,
-      goals: contextData.goals,
-      theme: contentTheme,
-      platform: contentPlatform,
-    };
-
-    const result = await generateSocialPost(input);
-
-    if (result.success && result.data) {
-      setGeneratedContent(result.data.post);
-    } else {
-      setGeneratedContent("Falha ao gerar conteúdo. Por favor, tente novamente.");
-    }
-    setIsGeneratingContent(false);
-  };
-
-  const renderPlaceholder = (icon: React.ElementType, title: string, description: string) => (
-    <div className="flex-grow flex flex-col items-center justify-center text-center h-full">
-      {React.createElement(icon, { className: "h-16 w-16 text-muted-foreground/30 mb-4" })}
-      <p className="text-muted-foreground tracking-widest text-sm">{title}</p>
-      <p className='text-sm text-muted-foreground/50 mt-2'>{description}</p>
-    </div>
-  );
-
-
   return (
     <div className="flex flex-col gap-8 h-full">
       <Header />
@@ -176,13 +131,11 @@ export default function IaAssistantPage() {
                     <SparklesIcon className="w-8 h-8" />
                     <h1 className="text-3xl font-bold tracking-tighter">AI Assistant Hub</h1>
                 </div>
-                <p className="text-muted-foreground">Privacidade total: seus dados ficam no seu navegador.</p>
+                <p className="text-muted-foreground">Peça ajuda para criar rotinas e planejar suas metas.</p>
             </div>
             <TabsList>
                 <TabsTrigger value="chat">CHAT</TabsTrigger>
-                <TabsTrigger value="content">CONTEÚDO</TabsTrigger>
                 <TabsTrigger value="notes">NOTAS</TabsTrigger>
-                <TabsTrigger value="voice">VOZ</TabsTrigger>
             </TabsList>
         </div>
 
@@ -254,64 +207,6 @@ export default function IaAssistantPage() {
                 </div>
             </Card>
         </TabsContent>
-        <TabsContent value="content" className="flex-grow mt-6">
-            <div className="grid grid-cols-3 gap-6 h-full">
-                <Card className="col-span-1 bg-card-foreground/5 border-none flex flex-col p-6">
-                    <h2 className="text-lg font-semibold mb-4">Gerador de Conteúdo</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label htmlFor="theme" className="text-sm font-medium text-muted-foreground">Tema Principal</label>
-                            <Input 
-                                id="theme"
-                                placeholder="Ex: Produtividade, Foco..."
-                                className="bg-card border-none mt-1"
-                                value={contentTheme}
-                                onChange={(e) => setContentTheme(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                           <label htmlFor="platform" className="text-sm font-medium text-muted-foreground">Plataforma</label>
-                            <Select value={contentPlatform} onValueChange={(value: SocialPlatform) => setContentPlatform(value)}>
-                                <SelectTrigger className="w-full bg-card border-none mt-1">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="instagram">Instagram</SelectItem>
-                                    <SelectItem value="linkedin">LinkedIn</SelectItem>
-                                    <SelectItem value="email">Email</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button onClick={handleGenerateContent} disabled={isGeneratingContent} className="w-full">
-                          {isGeneratingContent ? (
-                            <>
-                              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                              Gerando...
-                            </>
-                          ) : "Gerar Conteúdo"}
-                        </Button>
-                    </div>
-                </Card>
-                <Card className="col-span-2 bg-card-foreground/5 border-none flex flex-col p-6">
-                     <CardContent className="flex-grow flex flex-col">
-                        {isGeneratingContent ? (
-                           <div className="m-auto flex flex-col items-center text-center">
-                              <LoaderCircle className="h-12 w-12 text-muted-foreground/30 mb-4 animate-spin" />
-                               <p className="text-muted-foreground">Analisando seus dados e gerando o post...</p>
-                           </div>
-                        ) : generatedContent ? (
-                            <Textarea
-                                readOnly
-                                value={generatedContent}
-                                className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0 whitespace-pre-wrap"
-                            />
-                        ) : (
-                            renderPlaceholder(FileText, "GERAÇÃO DE CONTEÚDO", "Crie textos, roteiros e ideias com base em suas notas.")
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-        </TabsContent>
         <TabsContent value="notes" className="flex-grow mt-6">
              <Card className="flex-grow bg-card-foreground/5 border-none flex flex-col p-6 h-full">
                 <CardContent className="flex-grow flex flex-col">
@@ -322,11 +217,6 @@ export default function IaAssistantPage() {
                       onChange={(e) => setNotes(e.target.value)}
                   />
                 </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="voice" className="flex-grow mt-6">
-            <Card className="flex-grow bg-card-foreground/5 border-none flex flex-col p-6 h-full">
-                {renderPlaceholder(Mic, "ASSISTENTE DE VOZ", "Interaja com a IA através de comandos de voz.")}
             </Card>
         </TabsContent>
       </Tabs>
