@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, Briefcase, Box, Plus, Target, Heart, Trash2 } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type Goal = {
   id: string;
@@ -179,7 +180,15 @@ export default function AnnualGoalsPage() {
                 {section.goals.map((goal) => (
                   <div key={goal.id} className="flex items-center gap-3 group">
                     <Checkbox id={goal.id} className="w-5 h-5 rounded-full" checked={goal.completed} onCheckedChange={() => handleToggleGoal(section.title, goal.id)} />
-                    <label htmlFor={goal.id} className="text-sm flex-grow">{goal.text}</label>
+                    <label 
+                      htmlFor={goal.id} 
+                      className={cn(
+                        "text-sm flex-grow",
+                        goal.completed && "line-through text-muted-foreground"
+                      )}
+                    >
+                      {goal.text}
+                    </label>
                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveGoal(section.title, goal.id)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -243,4 +252,5 @@ export default function AnnualGoalsPage() {
       </footer>
     </div>
   );
-}
+
+    
