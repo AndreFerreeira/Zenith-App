@@ -68,39 +68,40 @@ export default function HabitTrackerPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="grid gap-y-2" style={{ gridTemplateColumns: `100px repeat(${daysInMonth.length}, 40px) 1fr`}}>
-              {/* Header */}
-              <div className="text-xs text-muted-foreground font-semibold flex items-end">OBJETIVO</div>
-              {daysInMonth.map((day) => (
-                <div key={day} className="text-xs text-muted-foreground font-semibold flex items-center justify-center h-8">
-                  {String(day).padStart(2, "0")}
-                </div>
-              ))}
-              <div />
-
-              {/* Habits */}
-              {monthlyHabits.map((habit) => (
-                <React.Fragment key={habit.id}>
-                  <div className="flex items-center text-sm font-medium h-10">{habit.name}</div>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="w-40 text-left text-xs text-muted-foreground font-semibold py-2">OBJETIVO</th>
                   {daysInMonth.map((day) => (
-                    <div key={day} className="flex items-center justify-center h-10">
-                      <Checkbox 
-                        className="w-7 h-7 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground rounded-md"
-                        checked={habit.completedDays.includes(day)}
-                      />
-                    </div>
+                    <th key={day} className="text-xs text-muted-foreground font-semibold w-10 text-center py-2">
+                      {day}
+                    </th>
                   ))}
-                  <div />
-                  
-                  {/* Progress Bar Row */}
-                  <div />
-                  <div className="col-span-31 mt-[-10px] mb-2">
-                     <Progress value={(habit.completedDays.length / 31) * 100} className="h-2" />
-                  </div>
-                  <div />
-                </React.Fragment>
-              ))}
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyHabits.map((habit) => (
+                  <React.Fragment key={habit.id}>
+                    <tr>
+                      <td className="py-4 text-sm font-medium h-10">{habit.name}</td>
+                      {daysInMonth.map((day) => (
+                        <td key={day} className="text-center h-10 py-4">
+                          <Checkbox
+                            className="w-7 h-7 bg-black/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground rounded-md border-none"
+                            checked={habit.completedDays.includes(day)}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td colSpan={daysInMonth.length + 1} className="pb-4 pt-0">
+                        <Progress value={(habit.completedDays.length / 31) * 100} className="h-2" />
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
