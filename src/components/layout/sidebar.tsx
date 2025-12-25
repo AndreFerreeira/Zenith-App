@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ZenithMasteryLogo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,21 +12,22 @@ import {
   Calendar,
   CircleHelp,
   SlidersHorizontal,
-  ChevronDown,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const navItems = [
-  { name: "VISÃO GERAL", icon: LayoutDashboard, active: true },
-  { name: "IA ASSISTENTE", icon: Sparkles },
-  { name: "METAS DO ANO", icon: Target },
-  { name: "GESTÃO FINANCEIRA", icon: Wallet },
-  { name: "ESTRATÉGIA MENSAL", icon: Calendar },
-  { name: "HABIT TRACKER", icon: CircleHelp },
-  { name: "PLANEJAMENTO SEMANAL", icon: SlidersHorizontal },
+  { name: "VISÃO GERAL", icon: LayoutDashboard, href: "/" },
+  { name: "IA ASSISTENTE", icon: Sparkles, href: "/ia-assistant" },
+  { name: "METAS DO ANO", icon: Target, href: "/annual-goals" },
+  { name: "GESTÃO FINANCEIRA", icon: Wallet, href: "/financial-management" },
+  { name: "ESTRATÉGIA MENSAL", icon: Calendar, href: "/monthly-strategy" },
+  { name: "HABIT TRACKER", icon: CircleHelp, href: "/habit-tracker" },
+  { name: "PLANEJAMENTO SEMANAL", icon: SlidersHorizontal, href: "/weekly-planning" },
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="w-64 flex-shrink-0 bg-card p-4 flex flex-col justify-between min-h-screen">
       <div>
@@ -41,11 +44,14 @@ export function Sidebar() {
           {navItems.map((item) => (
             <Button
               key={item.name}
-              variant={item.active ? "default" : "ghost"}
+              variant={pathname === item.href ? "default" : "ghost"}
               className="justify-start gap-3"
+              asChild
             >
-              <item.icon className="h-5 w-5" />
-              <span className="text-sm font-semibold">{item.name}</span>
+              <Link href={item.href}>
+                <item.icon className="h-5 w-5" />
+                <span className="text-sm font-semibold">{item.name}</span>
+              </Link>
             </Button>
           ))}
         </nav>
@@ -56,7 +62,7 @@ export function Sidebar() {
         <div className="text-center">
             <p className="text-xs text-muted-foreground mb-2">CICLO ANUAL</p>
             <div className="flex justify-center items-center relative w-24 h-24 mx-auto">
-                <Progress value={98} className="w-24 h-24 absolute" indicatorClassName="hidden" />
+                <Progress value={98} className="w-24 h-24 absolute" />
                 <svg className="w-24 h-24 transform -rotate-90">
                     <circle className="text-muted-foreground/10" strokeWidth="8" stroke="currentColor" fill="transparent" r="40" cx="48" cy="48" />
                     <circle
@@ -79,11 +85,4 @@ export function Sidebar() {
       </div>
     </aside>
   );
-}
-
-// Custom progress indicator to hide it
-declare module "@/components/ui/progress" {
-    interface ProgressProps {
-        indicatorClassName?: string
-    }
 }

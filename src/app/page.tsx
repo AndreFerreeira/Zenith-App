@@ -2,6 +2,7 @@ import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, Check, SlidersHorizontal, Target, Wallet, Calendar, Sparkles, Heart, CircleDashed } from "lucide-react";
+import Link from "next/link";
 
 
 const overviewCards = [
@@ -9,21 +10,25 @@ const overviewCards = [
     title: "METAS ATIVAS",
     value: "0",
     icon: Target,
+    href: "/annual-goals",
   },
   {
     title: "SALDO ATUAL",
     value: "R$ 0",
     icon: Wallet,
+    href: "/financial-management",
   },
   {
     title: "HÁBITOS HOJE",
     value: "0/0",
     icon: Check,
+    href: "/habit-tracker",
   },
   {
     title: "PRÓXIMO EVENTO",
     value: "Livre",
     icon: Calendar,
+    href: "/weekly-planning",
   },
 ];
 
@@ -40,24 +45,26 @@ export default function Home() {
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm"><Sparkles className="h-4 w-4" /> Assistente IA</Button>
-        <Button variant="outline" size="sm"><Wallet className="h-4 w-4" /> Finanças</Button>
-        <Button variant="outline" size="sm"><Check className="h-4 w-4" /> Hábitos</Button>
-        <Button variant="outline" size="sm"><SlidersHorizontal className="h-4 w-4" /> Planejamento</Button>
+        <Button asChild variant="secondary" size="sm"><Link href="/ia-assistant"><Sparkles className="h-4 w-4" /> Assistente IA</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link href="/financial-management"><Wallet className="h-4 w-4" /> Finanças</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link href="/habit-tracker"><Check className="h-4 w-4" /> Hábitos</Link></Button>
+        <Button asChild variant="outline" size="sm"><Link href="/weekly-planning"><SlidersHorizontal className="h-4 w-4" /> Planejamento</Link></Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {overviewCards.map((card, index) => (
-          <Card key={index} className="p-6 flex flex-col justify-between group">
-            <div className="flex justify-between items-start">
-              <div className="flex flex-col gap-4">
-                <card.icon className="h-6 w-6 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{card.title}</p>
+        {overviewCards.map((card) => (
+          <Link href={card.href} key={card.title}>
+            <Card className="p-6 flex flex-col justify-between group h-full">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col gap-4">
+                  <card.icon className="h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">{card.title}</p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
               </div>
-              <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-            </div>
-            <p className="text-3xl font-bold">{card.value}</p>
-          </Card>
+              <p className="text-3xl font-bold">{card.value}</p>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -75,8 +82,8 @@ export default function Home() {
             <p className="text-muted-foreground">Defina seus valores na aba Metas do Ano.</p>
           </div>
           <div className="grid grid-cols-2 gap-4 mt-8">
-             <Button variant="secondary" className="w-full">VERIFICAR HÁBITOS</Button>
-             <Button variant="outline" className="w-full">PLAN SEMANAL</Button>
+             <Button asChild variant="secondary" className="w-full"><Link href="/habit-tracker">VERIFICAR HÁBITOS</Link></Button>
+             <Button asChild variant="outline" className="w-full"><Link href="/weekly-planning">PLAN SEMANAL</Link></Button>
           </div>
         </Card>
         <Card className="p-8 flex flex-col justify-between items-center bg-primary text-primary-foreground text-center rounded-2xl relative overflow-hidden">
@@ -90,7 +97,7 @@ export default function Home() {
                 <h4 className="font-semibold mb-2">LEMBRETE:</h4>
                 <p>A rotina serve à vida, não o contrário.</p>
             </div>
-            <Button variant="secondary" className="w-full bg-black text-white hover:bg-black/80">ACESSAR PLANEJAMENTO</Button>
+            <Button asChild variant="secondary" className="w-full bg-black text-white hover:bg-black/80"><Link href="/weekly-planning">ACESSAR PLANEJAMENTO</Link></Button>
           </div>
         </Card>
       </div>
