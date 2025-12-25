@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { monthlyHabits } from "@/lib/data";
+import { monthlyHabits as initialMonthlyHabits } from "@/lib/data";
+import type { MonthlyHabit } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,37 @@ import {
 } from "lucide-react";
 
 export default function HabitTrackerPage() {
+  const [monthlyHabits, setMonthlyHabits] = React.useState<MonthlyHabit[]>(
+    initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() }))
+  );
+  const [newHabitName, setNewHabitName] = React.useState("");
+
   const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
+
+  const handleAddHabit = () => {
+    if (newHabitName.trim() === "") return;
+    const newHabit: MonthlyHabit = {
+      id: Math.random().toString(),
+      name: newHabitName,
+      completedDays: [],
+    };
+    setMonthlyHabits([...monthlyHabits, newHabit]);
+    setNewHabitName("");
+  };
+
+  const handleToggleHabit = (habitId: string, day: number) => {
+    setMonthlyHabits(
+      monthlyHabits.map((habit) => {
+        if (habit.id === habitId) {
+          const completedDays = habit.completedDays.includes(day)
+            ? habit.completedDays.filter((d) => d !== day)
+            : [...habit.completedDays, day];
+          return { ...habit, completedDays };
+        }
+        return habit;
+      })
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -60,8 +91,14 @@ export default function HabitTrackerPage() {
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <Input placeholder="Novo hábito..." className="bg-card border-none h-9 w-48" />
-            <Button size="icon" className="h-9 w-9 flex-shrink-0">
+            <Input
+              placeholder="Novo hábito..."
+              className="bg-card border-none h-9 w-48"
+              value={newHabitName}
+              onChange={(e) => setNewHabitName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddHabit()}
+            />
+            <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={handleAddHabit}>
               <Plus className="h-5 w-5" />
             </Button>
           </div>
@@ -89,6 +126,7 @@ export default function HabitTrackerPage() {
                           <Checkbox
                             className="w-7 h-7 bg-black/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground rounded-md border-none"
                             checked={habit.completedDays.includes(day)}
+                            onCheckedChange={() => handleToggleHabit(habit.id, day)}
                           />
                         </td>
                       ))}
