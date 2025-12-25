@@ -1,6 +1,7 @@
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { Sidebar } from '@/components/layout/sidebar';
 
 export const metadata: Metadata = {
   title: 'Zenith Mastery',
@@ -18,9 +19,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">
-        {children}
+      <body className="font-body antialiased bg-background">
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-8">
+            {children}
+          </main>
+        </div>
         <Toaster />
       </body>
     </html>
