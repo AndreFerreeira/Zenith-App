@@ -21,7 +21,7 @@ import {
   ChevronRight,
   Plus,
   CalendarDays,
-  X,
+  Trash2,
 } from "lucide-react";
 
 export default function HabitTrackerPage() {
@@ -130,7 +130,7 @@ export default function HabitTrackerPage() {
                         <div className="relative group flex items-center">
                           <span>{habit.name}</span>
                           <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto absolute right-0 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteHabit(habit.id)}>
-                              <X className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
