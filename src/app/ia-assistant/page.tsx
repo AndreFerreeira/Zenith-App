@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { BrainCircuit, Send, SparklesIcon, User, Mic, FileText, Notepad } from "lucide-react";
+import { BrainCircuit, Send, SparklesIcon, User, Mic, FileText, NotepadText } from "lucide-react";
 import { getAiSuggestions } from '@/app/actions';
 import type { SuggestPersonalizedRoutinesInput, SuggestPersonalizedRoutinesOutput } from '@/ai/flows/suggest-personalized-routines';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -191,7 +191,7 @@ export default function IaAssistantPage() {
         </TabsContent>
         <TabsContent value="notes" className="flex-grow mt-6">
              <Card className="flex-grow bg-card-foreground/5 border-none flex flex-col p-6 h-full">
-                {renderPlaceholder(Notepad, "BLOCO DE NOTAS INTELIGENTE", "Suas anotações são analisadas para gerar insights automáticos.")}
+                {renderPlaceholder(NotepadText, "BLOCO DE NOTAS INTELIGENTE", "Suas anotações são analisadas para gerar insights automáticos.")}
             </Card>
         </TabsContent>
         <TabsContent value="voice" className="flex-grow mt-6">
@@ -207,5 +207,3 @@ export default function IaAssistantPage() {
     </div>
   );
 }
-
-    
