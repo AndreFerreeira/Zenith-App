@@ -58,6 +58,7 @@ export default function IaAssistantPage() {
   }, []);
 
   React.useEffect(() => {
+    // Only save if notes is not the initial empty string
     if (notes) {
       localStorage.setItem('aiAssistantNotes', JSON.stringify(notes));
     }
@@ -139,6 +140,7 @@ export default function IaAssistantPage() {
   };
   
   const handleAddGoal = (goalText: string) => {
+    if (!goalText || goalText.trim() === "") return;
     try {
       const savedGoals = localStorage.getItem("annualGoals");
       let goalSections: Omit<GoalSection, 'icon'>[] = savedGoals ? JSON.parse(savedGoals) : [
@@ -147,16 +149,17 @@ export default function IaAssistantPage() {
         { title: "Materiais", goals: [] },
       ];
 
-      const personalSection = goalSections.find(s => s.title === "Pessoais");
-      
-      if (personalSection) {
-        const newGoal: Goal = {
-          id: Math.random().toString(),
-          text: goalText,
-          completed: false,
-        };
-        personalSection.goals.push(newGoal);
+      const personalSection = goalSections.find(s => s.title === "Pessoais") || { title: "Pessoais", goals: []};
+      if (!goalSections.find(s => s.title === "Pessoais")) {
+        goalSections.push(personalSection);
       }
+      
+      const newGoal: Goal = {
+        id: Math.random().toString(),
+        text: goalText,
+        completed: false,
+      };
+      personalSection.goals.push(newGoal);
       
       localStorage.setItem("annualGoals", JSON.stringify(goalSections));
       toast({ title: "Meta adicionada!", description: `"${goalText}" foi adicionado às suas metas pessoais.` });
@@ -167,6 +170,7 @@ export default function IaAssistantPage() {
   };
 
   const handleAddHabit = (habitName: string) => {
+    if (!habitName || habitName.trim() === "") return;
     try {
       const today = new Date();
       const storageKey = `monthlyHabits_${format(today, 'yyyy-MM')}`;
@@ -188,7 +192,22 @@ export default function IaAssistantPage() {
     }
   };
 
-  const renderAssistantMessage = (content: SuggestPersonalizedRoutinesOutput) => {
+  const AssistantMessage = ({ content }: { content: SuggestPersonalizedRoutinesOutput }) => {
+    const [editableGoals, setEditableGoals] = React.useState(content.suggestedGoals || []);
+    const [editableHabits, setEditableHabits] = React.useState(content.suggestedHabits || []);
+  
+    const handleGoalChange = (index: number, value: string) => {
+      const newGoals = [...editableGoals];
+      newGoals[index] = value;
+      setEditableGoals(newGoals);
+    };
+  
+    const handleHabitChange = (index: number, value: string) => {
+      const newHabits = [...editableHabits];
+      newHabits[index] = value;
+      setEditableHabits(newHabits);
+    };
+  
     return (
       <div className="space-y-4">
         <div>
@@ -199,32 +218,40 @@ export default function IaAssistantPage() {
           <h4 className='font-bold mt-4 mb-2'>Rotina Semanal Sugerida:</h4>
           <p className="text-sm whitespace-pre-wrap">{content.weeklyRoutine}</p>
         </div>
-
-        {content.suggestedGoals && content.suggestedGoals.length > 0 && (
+  
+        {editableGoals.length > 0 && (
           <div>
             <h4 className='font-bold mt-4 mb-2'>Metas Sugeridas:</h4>
             <div className="space-y-2">
-              {content.suggestedGoals.map((goal, i) => (
-                <div key={`goal-${i}`} className="flex items-center justify-between bg-card-foreground/10 p-2 rounded-md">
-                  <span className="text-sm">{goal}</span>
-                  <Button size="sm" variant="ghost" onClick={() => handleAddGoal(goal)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Meta
+              {editableGoals.map((goal, i) => (
+                <div key={`goal-${i}`} className="flex items-center gap-2">
+                  <Input 
+                    value={goal}
+                    onChange={(e) => handleGoalChange(i, e.target.value)}
+                    className="bg-card-foreground/10 border-none h-9"
+                  />
+                  <Button size="icon" className="h-9 w-9 flex-shrink-0" variant="secondary" onClick={() => handleAddGoal(goal)}>
+                    <Plus className="h-5 w-5" />
                   </Button>
                 </div>
               ))}
             </div>
           </div>
         )}
-
-        {content.suggestedHabits && content.suggestedHabits.length > 0 && (
+  
+        {editableHabits.length > 0 && (
           <div>
             <h4 className='font-bold mt-4 mb-2'>Hábitos Sugeridos:</h4>
             <div className="space-y-2">
-              {content.suggestedHabits.map((habit, i) => (
-                <div key={`habit-${i}`} className="flex items-center justify-between bg-card-foreground/10 p-2 rounded-md">
-                  <span className="text-sm">{habit}</span>
-                  <Button size="sm" variant="ghost" onClick={() => handleAddHabit(habit)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Hábito
+              {editableHabits.map((habit, i) => (
+                <div key={`habit-${i}`} className="flex items-center gap-2">
+                   <Input 
+                    value={habit}
+                    onChange={(e) => handleHabitChange(i, e.target.value)}
+                    className="bg-card-foreground/10 border-none h-9"
+                  />
+                  <Button size="icon" className="h-9 w-9 flex-shrink-0" variant="secondary" onClick={() => handleAddHabit(habit)}>
+                    <Plus className="h-5 w-5" />
                   </Button>
                 </div>
               ))}
@@ -276,7 +303,7 @@ export default function IaAssistantPage() {
                         {typeof message.content === 'string' ? (
                           <p className="text-sm">{message.content}</p>
                         ) : (
-                          renderAssistantMessage(message.content)
+                          <AssistantMessage content={message.content} />
                         )}
                     </div>
                     {message.role === 'user' && (
@@ -302,7 +329,7 @@ export default function IaAssistantPage() {
 
                 </CardContent>
                 
-                <div className="mt-auto">
+                <div className="mt-auto pt-4">
                 <div className="relative">
                     <Input 
                     placeholder="Peça auxílio estratégico ou análise de dados..." 
@@ -324,7 +351,7 @@ export default function IaAssistantPage() {
                 <CardContent className="flex-grow flex flex-col">
                   <Textarea 
                       placeholder="Comece a digitar suas ideias, pensamentos ou qualquer coisa que vier à mente..."
-                      className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0"
+                      className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0 px-0"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                   />
