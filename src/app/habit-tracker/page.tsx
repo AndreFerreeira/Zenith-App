@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { monthlyHabits as initialMonthlyHabits } from "@/lib/data";
 import type { MonthlyHabit } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,32 +22,58 @@ import {
   CalendarDays,
   Trash2,
 } from "lucide-react";
+import { addMonths, format, getDaysInMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const initialMonthlyHabits: MonthlyHabit[] = [
+    {
+        id: 'mh1',
+        name: 'TESTE',
+        completedDays: [1, 2, 4, 5, 8, 9, 10, 11, 12, 15, 18, 20, 22, 25, 28, 29, 30]
+    },
+    {
+        id: 'mh2',
+        name: 'LEITURA',
+        completedDays: [3, 6, 7, 13, 14, 16, 17, 19, 21, 23, 24, 26, 27, 31]
+    }
+]
 
 export default function HabitTrackerPage() {
   const [monthlyHabits, setMonthlyHabits] = React.useState<MonthlyHabit[]>([]);
   const [newHabitName, setNewHabitName] = React.useState("");
+  const [currentDate, setCurrentDate] = React.useState(new Date());
+
+  const getStorageKey = (date: Date) => {
+    return `monthlyHabits_${format(date, 'yyyy-MM')}`;
+  }
 
   React.useEffect(() => {
     try {
-      const savedHabits = localStorage.getItem("monthlyHabits");
+      const savedHabits = localStorage.getItem(getStorageKey(currentDate));
       if (savedHabits) {
         setMonthlyHabits(JSON.parse(savedHabits));
       } else {
-        setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
+        // For the current month, we might start with initial habits if none are saved.
+        // For other months, we'll start with an empty list.
+        if (format(currentDate, 'yyyy-MM') === format(new Date(), 'yyyy-MM')) {
+            setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
+        } else {
+            setMonthlyHabits([]);
+        }
       }
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
       setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
     }
-  }, []);
+  }, [currentDate]);
 
   React.useEffect(() => {
     if (monthlyHabits.length > 0) {
-      localStorage.setItem("monthlyHabits", JSON.stringify(monthlyHabits));
+      localStorage.setItem(getStorageKey(currentDate), JSON.stringify(monthlyHabits));
     }
-  }, [monthlyHabits]);
+  }, [monthlyHabits, currentDate]);
 
-  const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
+  const daysInMonth = Array.from({ length: getDaysInMonth(currentDate) }, (_, i) => i + 1);
 
   const handleAddHabit = () => {
     if (newHabitName.trim() === "") return;
@@ -78,6 +103,14 @@ export default function HabitTrackerPage() {
   const handleDeleteHabit = (habitId: string) => {
     setMonthlyHabits(monthlyHabits.filter(habit => habit.id !== habitId));
   };
+  
+  const handlePreviousMonth = () => {
+      setCurrentDate(subMonths(currentDate, 1));
+  }
+  
+  const handleNextMonth = () => {
+      setCurrentDate(addMonths(currentDate, 1));
+  }
 
 
   return (
@@ -96,11 +129,13 @@ export default function HabitTrackerPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="font-semibold text-sm">DEZEMBRO</span>
-          <Button variant="outline" size="icon">
+          <span className="font-semibold text-sm w-28 text-center uppercase">
+            {format(currentDate, 'MMMM', { locale: ptBR })}
+          </span>
+          <Button variant="outline" size="icon" onClick={handleNextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -164,7 +199,7 @@ export default function HabitTrackerPage() {
                     </tr>
                     <tr>
                       <td colSpan={daysInMonth.length + 1} className="pb-4 pt-0">
-                        <Progress value={(habit.completedDays.length / 31) * 100} className="h-2" />
+                        <Progress value={(habit.completedDays.length / daysInMonth.length) * 100} className="h-2" />
                       </td>
                     </tr>
                   </React.Fragment>
@@ -181,5 +216,3 @@ export default function HabitTrackerPage() {
     </div>
   );
 }
-
-    
