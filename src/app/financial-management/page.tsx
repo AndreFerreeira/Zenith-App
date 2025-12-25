@@ -349,7 +349,7 @@ export default function FinancialManagementPage() {
                         <ListTodo className="h-5 w-5" />
                         Wishlist
                     </CardTitle>
-                </Header>
+                </CardHeader>
                 <CardContent className="flex-grow flex flex-col text-center">
                     {wishlist.length === 0 ? (
                       <p className="text-muted-foreground mb-4 m-auto">SUA LISTA ESTÁ VAZIA</p>
