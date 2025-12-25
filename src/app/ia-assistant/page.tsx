@@ -48,14 +48,26 @@ export default function IaAssistantPage() {
       if (savedNotes) {
         setNotes(JSON.parse(savedNotes));
       }
+      const savedMessages = localStorage.getItem('aiAssistantMessages');
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+      }
     } catch (error) {
-      console.error("Failed to parse notes from localStorage", error);
+      console.error("Failed to parse from localStorage", error);
     }
   }, []);
 
   React.useEffect(() => {
-    localStorage.setItem('aiAssistantNotes', JSON.stringify(notes));
+    if (notes) {
+      localStorage.setItem('aiAssistantNotes', JSON.stringify(notes));
+    }
   }, [notes]);
+
+  React.useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('aiAssistantMessages', JSON.stringify(messages));
+    }
+  }, [messages]);
 
 
   const getContextData = (): SuggestPersonalizedRoutinesInput => {
@@ -327,3 +339,5 @@ export default function IaAssistantPage() {
     </div>
   );
 }
+
+    
