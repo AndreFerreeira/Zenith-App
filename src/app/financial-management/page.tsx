@@ -31,7 +31,7 @@ import {
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import type { Transaction, WishlistItem } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-import { format, getMonth, getYear, startOfMonth } from 'date-fns';
+import { format, getMonth, getYear, startOfMonth, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const chartConfig = {
@@ -143,26 +143,31 @@ export default function FinancialManagementPage() {
   );
 
   const chartData = React.useMemo(() => {
-    const monthlyBalances: Record<string, number> = {};
+    const monthlyData: Record<string, { gains: number; expenses: number }> = {};
 
     transactions.forEach(t => {
       const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
-      if (!monthlyBalances[monthKey]) {
-        monthlyBalances[monthKey] = 0;
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { gains: 0, expenses: 0 };
+      }
+      if (t.type === 'entrada') {
+        monthlyData[monthKey].gains += t.amount;
+      } else {
+        monthlyData[monthKey].expenses += t.amount;
       }
     });
 
+    const sortedMonthKeys = Object.keys(monthlyData).sort();
+    
     let accumulatedBalance = 0;
-    const sortedMonthKeys = Object.keys(monthlyBalances).sort();
-
     const chartPoints = sortedMonthKeys.map(monthKey => {
-      const monthTransactions = transactions.filter(t => format(startOfMonth(t.date), 'yyyy-MM') === monthKey);
-      const monthGains = monthTransactions.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
-      const monthExpenses = monthTransactions.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
-      accumulatedBalance += monthGains - monthExpenses;
+      const { gains, expenses } = monthlyData[monthKey];
+      accumulatedBalance += gains - expenses;
+      
+      const date = parse(monthKey, 'yyyy-MM', new Date());
 
       return {
-        month: format(new Date(monthKey + '-02'), 'MMM', { locale: ptBR }),
+        month: format(date, 'MMM', { locale: ptBR }),
         balance: accumulatedBalance,
       };
     });
@@ -344,7 +349,7 @@ export default function FinancialManagementPage() {
                         <ListTodo className="h-5 w-5" />
                         Wishlist
                     </CardTitle>
-                </CardHeader>
+                </Header>
                 <CardContent className="flex-grow flex flex-col text-center">
                     {wishlist.length === 0 ? (
                       <p className="text-muted-foreground mb-4 m-auto">SUA LISTA ESTÁ VAZIA</p>
@@ -373,5 +378,3 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
-
-    
