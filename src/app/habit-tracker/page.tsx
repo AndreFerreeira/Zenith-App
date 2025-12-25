@@ -53,8 +53,6 @@ export default function HabitTrackerPage() {
       if (savedHabits) {
         setMonthlyHabits(JSON.parse(savedHabits));
       } else {
-        // For the current month, we might start with initial habits if none are saved.
-        // For other months, we'll start with an empty list.
         if (format(currentDate, 'yyyy-MM') === format(new Date(), 'yyyy-MM')) {
             setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
         } else {
@@ -132,8 +130,8 @@ export default function HabitTrackerPage() {
           <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="font-semibold text-sm w-28 text-center uppercase">
-            {format(currentDate, 'MMMM', { locale: ptBR })}
+          <span className="font-semibold text-sm w-36 text-center uppercase">
+            {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
           </span>
           <Button variant="outline" size="icon" onClick={handleNextMonth}>
             <ChevronRight className="h-4 w-4" />

@@ -1,38 +1,134 @@
+
+'use client';
+
+import * as React from 'react';
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, Check, SlidersHorizontal, Target, Wallet, Calendar, Sparkles, Heart, CircleDashed } from "lucide-react";
 import Link from "next/link";
+import type { Transaction, MonthlyHabit, Goal, WeeklyDay } from '@/lib/data';
 
+type AnnualGoalSection = {
+  title: string;
+  goals: { id: string; text: string; completed: boolean }[];
+};
 
-const overviewCards = [
-  {
-    title: "METAS ATIVAS",
-    value: "0",
-    icon: Target,
-    href: "/annual-goals",
-  },
-  {
-    title: "SALDO ATUAL",
-    value: "R$ 0",
-    icon: Wallet,
-    href: "/financial-management",
-  },
-  {
-    title: "HÁBITOS HOJE",
-    value: "0/0",
-    icon: Check,
-    href: "/habit-tracker",
-  },
-  {
-    title: "PRÓXIMO EVENTO",
-    value: "Livre",
-    icon: Calendar,
-    href: "/weekly-planning",
-  },
-];
 
 export default function Home() {
+  const [activeGoals, setActiveGoals] = React.useState(0);
+  const [currentBalance, setCurrentBalance] = React.useState(0);
+  const [habitsToday, setHabitsToday] = React.useState({ completed: 0, total: 0 });
+  const [nextEvent, setNextEvent] = React.useState("Livre");
+  const [coreValues, setCoreValues] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    // This function will run on the client, so window is available.
+    const calculateOverview = () => {
+      // 1. Active Goals
+      try {
+        const savedGoals = localStorage.getItem("annualGoals");
+        if (savedGoals) {
+          const parsedGoals: AnnualGoalSection[] = JSON.parse(savedGoals);
+          const totalIncomplete = parsedGoals.reduce((acc, section) => {
+            return acc + section.goals.filter(goal => !goal.completed).length;
+          }, 0);
+          setActiveGoals(totalIncomplete);
+        }
+      } catch (e) { console.error("Failed to parse annual goals", e)}
+
+
+      // 2. Current Balance
+      try {
+        const savedTransactions = localStorage.getItem("financialTransactions");
+        if (savedTransactions) {
+          const transactions: Transaction[] = JSON.parse(savedTransactions);
+          const totalGains = transactions.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
+          const totalExpenses = transactions.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
+          setCurrentBalance(totalGains - totalExpenses);
+        }
+      } catch(e) { console.error("Failed to parse financial transactions", e)}
+
+      // 3. Habits Today
+      try {
+        const today = new Date();
+        const storageKey = `monthlyHabits_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const savedHabits = localStorage.getItem(storageKey);
+        if (savedHabits) {
+          const habits: MonthlyHabit[] = JSON.parse(savedHabits);
+          const dayOfMonth = today.getDate();
+          const completedCount = habits.filter(h => h.completedDays.includes(dayOfMonth)).length;
+          setHabitsToday({ completed: completedCount, total: habits.length });
+        }
+      } catch(e) { console.error("Failed to parse habits", e)}
+
+
+      // 4. Next Event
+      try {
+        const savedWeeklyPlan = localStorage.getItem("weeklyPlan");
+        if (savedWeeklyPlan) {
+          const weeklyPlan: WeeklyDay[] = JSON.parse(savedWeeklyPlan);
+          const today = new Date();
+          const dayOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][today.getDay()];
+          const todayPlan = weeklyPlan.find(d => d.day === dayOfWeek);
+          setNextEvent(todayPlan?.tasks[0]?.name || "Livre");
+        }
+      } catch (e) { console.error("Failed to parse weekly plan", e)}
+
+      // Core Values
+      try {
+        const savedValues = localStorage.getItem("coreValues");
+        if (savedValues) {
+            const parsedValues = JSON.parse(savedValues);
+            if (parsedValues && typeof parsedValues === 'string' && parsedValues.trim() !== '') {
+                setCoreValues(parsedValues);
+            }
+        }
+      } catch (e) { console.error("Failed to parse core values", e)}
+    };
+
+    calculateOverview();
+    
+    // Optional: Re-calculate when storage changes (e.g., in another tab)
+    window.addEventListener('storage', calculateOverview);
+    
+    return () => {
+      window.removeEventListener('storage', calculateOverview);
+    }
+
+  }, []);
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  
+  const overviewCards = [
+    {
+      title: "METAS ATIVAS",
+      value: activeGoals.toString(),
+      icon: Target,
+      href: "/annual-goals",
+    },
+    {
+      title: "SALDO ATUAL",
+      value: formatCurrency(currentBalance),
+      icon: Wallet,
+      href: "/financial-management",
+    },
+    {
+      title: "HÁBITOS HOJE",
+      value: `${habitsToday.completed}/${habitsToday.total}`,
+      icon: Check,
+      href: "/habit-tracker",
+    },
+    {
+      title: "PRÓXIMO EVENTO",
+      value: nextEvent,
+      icon: Calendar,
+      href: "/weekly-planning",
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-8">
       <Header />
@@ -69,23 +165,31 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6 flex flex-col justify-between group">
-           <div className="flex justify-between items-start">
-            <div className="flex items-center gap-2">
-              <Heart className="h-6 w-6 text-muted-foreground" />
-              <h3 className="text-lg font-semibold">Valores Centrais</h3>
+        <Link href="/annual-goals" className="lg:col-span-2">
+          <Card className="p-6 flex flex-col justify-between group h-full">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-2">
+                <Heart className="h-6 w-6 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Valores Centrais</h3>
+              </div>
+              <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
-            <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-          </div>
-          <div className="flex items-center gap-4 mt-8">
-             <CircleDashed className="h-10 w-10 text-muted-foreground/20" />
-            <p className="text-muted-foreground">Defina seus valores na aba Metas do Ano.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-8">
-             <Button asChild variant="secondary" className="w-full"><Link href="/habit-tracker">VERIFICAR HÁBITOS</Link></Button>
-             <Button asChild variant="outline" className="w-full"><Link href="/weekly-planning">PLAN SEMANAL</Link></Button>
-          </div>
-        </Card>
+            <div className="flex items-center gap-4 mt-8">
+              {coreValues ? (
+                 <p className="text-muted-foreground italic">"{coreValues}"</p>
+              ) : (
+                <>
+                  <CircleDashed className="h-10 w-10 text-muted-foreground/20" />
+                  <p className="text-muted-foreground">Defina seus valores na aba Metas do Ano.</p>
+                </>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <Button asChild variant="secondary" className="w-full"><Link href="/habit-tracker">VERIFICAR HÁBITOS</Link></Button>
+              <Button asChild variant="outline" className="w-full"><Link href="/weekly-planning">PLAN SEMANAL</Link></Button>
+            </div>
+          </Card>
+        </Link>
         <Card className="p-8 flex flex-col justify-between items-center bg-primary text-primary-foreground text-center rounded-2xl relative overflow-hidden">
             <div className="absolute -bottom-16 -right-16">
                 <div className="w-48 h-48 border-4 border-black/5 rounded-full" />
