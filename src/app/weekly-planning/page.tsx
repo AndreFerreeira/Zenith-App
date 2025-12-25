@@ -1,15 +1,51 @@
 
 "use client";
 
+import * as React from "react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent } from "@/components/ui/card";
-import { weeklyPlan } from "@/lib/data";
+import { weeklyPlan as initialWeeklyPlan } from "@/lib/data";
+import type { WeeklyDay, WeeklyTask } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Plus, X, NotebookPen } from "lucide-react";
 
 export default function WeeklyPlanningPage() {
+  const [weeklyPlan, setWeeklyPlan] = React.useState<WeeklyDay[]>(initialWeeklyPlan);
+  const [newTasks, setNewTasks] = React.useState<Record<string, string>>({});
+
+  const handleNewTaskChange = (day: string, value: string) => {
+    setNewTasks(prev => ({ ...prev, [day]: value }));
+  };
+
+  const handleAddTask = (day: string) => {
+    const taskName = newTasks[day];
+    if (!taskName || taskName.trim() === "") return;
+
+    const newTask: WeeklyTask = {
+      name: taskName.trim(),
+      category: 'PESSOAL', // Default category for now
+    };
+
+    setWeeklyPlan(prevPlan =>
+      prevPlan.map(d =>
+        d.day === day ? { ...d, tasks: [...d.tasks, newTask] } : d
+      )
+    );
+
+    handleNewTaskChange(day, "");
+  };
+  
+  const handleRemoveTask = (day: string, taskIndex: number) => {
+    setWeeklyPlan(prevPlan =>
+      prevPlan.map(d =>
+        d.day === day ? { ...d, tasks: d.tasks.filter((_, i) => i !== taskIndex) } : d
+      )
+    );
+  };
+
+
   return (
     <div className="flex flex-col gap-8">
       <Header />
@@ -33,7 +69,7 @@ export default function WeeklyPlanningPage() {
 
               <div className="flex-grow flex flex-col gap-2">
                 {day.tasks.map((task, index) => (
-                  <div key={index} className="bg-card p-3 rounded-lg">
+                  <div key={index} className="bg-card p-3 rounded-lg group relative">
                     <p className="text-sm font-medium mb-2">/ {task.name}</p>
                     <Badge variant={
                       task.category === 'PESSOAL' ? 'default' : 
@@ -45,6 +81,9 @@ export default function WeeklyPlanningPage() {
                     }>
                       {task.category}
                     </Badge>
+                     <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto absolute top-1 right-1 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveTask(day.day, index)}>
+                        <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
                 {day.tasks.length === 0 && (
@@ -61,13 +100,16 @@ export default function WeeklyPlanningPage() {
                     <Button variant="outline" size="sm" className="text-xs h-7">PES</Button>
                     <Button variant="outline" size="sm" className="text-xs h-7">PRO</Button>
                     <Button variant="outline" size="sm" className="text-xs h-7">MAT</Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto">
-                        <X className="h-4 w-4" />
-                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Input placeholder="Novo item..." className="bg-card border-none h-9" />
-                    <Button size="icon" className="h-9 w-9 flex-shrink-0">
+                    <Input 
+                      placeholder="Novo item..." 
+                      className="bg-card border-none h-9"
+                      value={newTasks[day.day] || ""}
+                      onChange={(e) => handleNewTaskChange(day.day, e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask(day.day)}
+                    />
+                    <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={() => handleAddTask(day.day)}>
                         <Plus className="h-5 w-5" />
                     </Button>
                 </div>
