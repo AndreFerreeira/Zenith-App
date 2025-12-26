@@ -5,6 +5,12 @@ import { firestore } from '@/firebase';
 // Helper function to get a user document reference
 const userDocRef = (userId: string) => doc(firestore, 'users', userId);
 
+// Function to check if a user document exists
+export async function userExists(userId: string): Promise<boolean> {
+    const docSnap = await getDoc(userDocRef(userId));
+    return docSnap.exists();
+}
+
 // Initial data for new users
 const initialData = {
     weeklyPlan: [

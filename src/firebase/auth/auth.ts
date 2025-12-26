@@ -9,7 +9,7 @@ import {
     signInWithPopup, 
     signOut as firebaseSignOut
 } from "firebase/auth";
-import { createInitialUserData } from '../firestore/data';
+import { createInitialUserData, userExists } from '../firestore/data';
 
 export async function signUpWithEmail(email: string, password: string): Promise<void> {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -24,8 +24,12 @@ export async function signInWithEmail(email: string, password: string): Promise<
 export async function signInWithGoogle(): Promise<void> {
     const userCredential = await signInWithPopup(auth, googleProvider);
     const { user } = userCredential;
+
     // Check if user data already exists before creating it
-    await createInitialUserData(user.uid, user.email, user.displayName, user.photoURL);
+    const exists = await userExists(user.uid);
+    if (!exists) {
+        await createInitialUserData(user.uid, user.email, user.displayName, user.photoURL);
+    }
 }
 
 export async function signOut(): Promise<void> {
