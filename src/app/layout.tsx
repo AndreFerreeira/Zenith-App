@@ -37,7 +37,6 @@ export default function RootLayout({
             <FloatingNav />
           </div>
           <Toaster />
-          <FirebaseErrorListener />
       </body>
     </html>
   );
