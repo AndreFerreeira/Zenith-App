@@ -1,0 +1,141 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "format": "uri", "description": "URL of the user's profile picture." }
+      },
+      "required": ["uid", "email"]
+    },
+    "AnnualGoal": {
+        "title": "Annual Goal",
+        "description": "A user's goal for the year.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "text": { "type": "string" },
+            "completed": { "type": "boolean" },
+            "category": { "type": "string", "enum": ["Pessoais", "Profissionais", "Materiais"] }
+        },
+        "required": ["text", "completed", "category"]
+    },
+    "Habit": {
+        "title": "Habit",
+        "description": "A habit being tracked by the user for a specific month.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "month": { "type": "string", "description": "The month in YYYY-MM format." },
+            "completedDays": { "type": "array", "items": { "type": "number" } }
+        },
+        "required": ["name", "month", "completedDays"]
+    },
+    "Transaction": {
+        "title": "Transaction",
+        "description": "A financial transaction.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "description": { "type": "string" },
+            "amount": { "type": "number" },
+            "type": { "type": "string", "enum": ["entrada", "saida"] },
+            "date": { "type": "string", "format": "date-time" }
+        },
+        "required": ["description", "amount", "type", "date"]
+    },
+    "WishlistItem": {
+        "title": "Wishlist Item",
+        "description": "An item on the user's financial wishlist.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" }
+        },
+        "required": ["name"]
+    },
+    "WeeklyTask": {
+        "title": "Weekly Task",
+        "description": "A task within a weekly plan.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "category": { "type": "string", "enum": ["PESSOAL", "PROFISSIONAL", "MATERIAL"] }
+        },
+        "required": ["name", "category"]
+    },
+     "WeeklyPlan": {
+        "title": "Weekly Plan",
+        "description": "The user's plan for a week.",
+        "type": "object",
+        "properties": {
+            "day": { "type": "string" },
+            "tasks": { "type": "array", "items": { "$ref": "#/entities/WeeklyTask" } }
+        },
+        "required": ["day", "tasks"]
+    },
+    "MonthlyStrategy": {
+        "title": "Monthly Strategy",
+        "description": "The user's strategy for the month.",
+        "type": "object",
+        "properties": {
+            "month": { "type": "string", "description": "The month in YYYY-MM format." },
+            "focus": { "type": "string" },
+            "wins": { "type": "string" },
+            "learnings": { "type": "string" }
+        },
+        "required": ["month"]
+    },
+    "UserDocument": {
+      "title": "User Document",
+      "description": "A top-level document representing all data for a single user.",
+      "type": "object",
+      "properties": {
+        "profile": { "$ref": "#/entities/UserProfile" },
+        "dreamRoutine": { "type": "string" },
+        "coreValues": { "type": "string" },
+        "financialGoal": { "type": "number" },
+        "aiNotes": { "type": "string" },
+        "aiMessages": { "type": "array", "items": {"type": "object"} }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserDocument" },
+      "description": "Stores all data for a specific user, including their profile and other settings."
+    },
+    "/users/{userId}/annualGoals": {
+      "schema": { "$ref": "#/entities/AnnualGoal" },
+      "description": "Collection of annual goals for a user."
+    },
+    "/users/{userId}/habits": {
+      "schema": { "$ref": "#/entities/Habit" },
+      "description": "Collection of monthly habits for a user."
+    },
+    "/users/{userId}/transactions": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Collection of financial transactions for a user."
+    },
+    "/users/{userId}/wishlist": {
+      "schema": { "$ref": "#/entities/WishlistItem" },
+      "description": "Collection of wishlist items for a user."
+    },
+    "/users/{userId}/weeklyPlans": {
+        "schema": { "$ref": "#/entities/WeeklyPlan" },
+        "description": "Collection of weekly plans for a user."
+    },
+    "/users/{userId}/monthlyStrategies": {
+        "schema": { "$ref": "#/entities/MonthlyStrategy" },
+        "description": "Collection of monthly strategies for a user."
+    }
+  }
+}
