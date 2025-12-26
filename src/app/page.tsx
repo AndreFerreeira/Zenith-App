@@ -9,83 +9,100 @@ import { ArrowUpRight, Check, SlidersHorizontal, Target, Wallet, Calendar, Spark
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/firebase/auth/provider';
-import { useAnnualGoals, useTransactions, useHabits, useWeeklyPlan, useUserDocument } from '@/firebase/firestore/data-hooks';
+import { useWeeklyPlan, useUserDocument, useAnnualGoals, useTransactions, useHabits } from '@/firebase/firestore/data-hooks';
 import { format, parseISO } from 'date-fns';
 
-export default function Home() {
-  const { user, isLoading: isAuthLoading } = useAuth();
-  
-  const { data: goals, isLoading: isGoalsLoading } = useAnnualGoals(user?.uid);
-  const { data: transactions, isLoading: isTransactionsLoading } = useTransactions(user?.uid);
-  
-  const today = new Date();
-  const habitsKey = format(today, 'yyyy-MM');
-  const { data: habits, isLoading: isHabitsLoading } = useHabits(user?.uid, habitsKey);
-  
-  const dayOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][today.getDay()];
-  const { data: weeklyPlan, isLoading: isWeeklyPlanLoading } = useWeeklyPlan(user?.uid);
-  const { data: userDoc, isLoading: isUserDocLoading } = useUserDocument(user?.uid);
-  
-  const activeGoals = React.useMemo(() => {
-    if (!goals) return 0;
-    return goals.filter(goal => !goal.completed).length;
-  }, [goals]);
+// --- Componentes de Card Individuais ---
 
-  const currentBalance = React.useMemo(() => {
-    if (!transactions) return 0;
+const ActiveGoalsCard = () => {
+  const { user } = useAuth();
+  const { data: goals, isLoading } = useAnnualGoals(user?.uid);
+  const value = React.useMemo(() => goals?.filter(goal => !goal.completed).length.toString() || '0', [goals]);
+
+  return (
+    <OverviewCard title="METAS ATIVAS" value={value} icon={Target} href="/annual-goals" isLoading={isLoading} />
+  );
+};
+
+const CurrentBalanceCard = () => {
+  const { user } = useAuth();
+  const { data: transactions, isLoading } = useTransactions(user?.uid);
+  const value = React.useMemo(() => {
+    if (!transactions) return formatCurrency(0);
     const parsedTransactions = transactions.map(t => ({...t, date: parseISO(t.date)}));
     const totalGains = parsedTransactions.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
     const totalExpenses = parsedTransactions.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
-    return totalGains - totalExpenses;
+    return formatCurrency(totalGains - totalExpenses);
   }, [transactions]);
+  
+  return <OverviewCard title="SALDO ATUAL" value={value} icon={Wallet} href="/financial-management" isLoading={isLoading} />;
+};
 
-  const habitsToday = React.useMemo(() => {
-    if (!habits) return { completed: 0, total: 0 };
+const HabitsTodayCard = () => {
+  const { user } = useAuth();
+  const today = new Date();
+  const habitsKey = format(today, 'yyyy-MM');
+  const { data: habits, isLoading } = useHabits(user?.uid, habitsKey);
+  const value = React.useMemo(() => {
+    if (!habits) return "0/0";
     const dayOfMonth = today.getDate();
     const completedCount = habits.filter(h => h.completedDays.includes(dayOfMonth)).length;
-    return { completed: completedCount, total: habits.length };
+    return `${completedCount}/${habits.length}`;
   }, [habits, today]);
 
-  const nextEvent = React.useMemo(() => {
+  return <OverviewCard title="HÁBITOS HOJE" value={value} icon={Check} href="/habit-tracker" isLoading={isLoading} />;
+};
+
+const NextEventCard = () => {
+  const { user } = useAuth();
+  const today = new Date();
+  const dayOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][today.getDay()];
+  const { data: weeklyPlan, isLoading } = useWeeklyPlan(user?.uid);
+  const value = React.useMemo(() => {
     if (!weeklyPlan) return "Livre";
     const todayPlan = weeklyPlan.find(d => d.day === dayOfWeek);
     return todayPlan?.tasks[0]?.name || "Livre";
   }, [weeklyPlan, dayOfWeek]);
+  
+  return <OverviewCard title="PRÓXIMO EVENTO" value={value} icon={Calendar} href="/weekly-planning" isLoading={isLoading} />;
+};
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
+// --- Componente Genérico de Card ---
 
-  const overviewCards = [
-    {
-      title: "METAS ATIVAS",
-      value: activeGoals.toString(),
-      icon: Target,
-      href: "/annual-goals",
-      isLoading: isGoalsLoading,
-    },
-    {
-      title: "SALDO ATUAL",
-      value: formatCurrency(currentBalance),
-      icon: Wallet,
-      href: "/financial-management",
-      isLoading: isTransactionsLoading,
-    },
-    {
-      title: "HÁBITOS HOJE",
-      value: `${habitsToday.completed}/${habitsToday.total}`,
-      icon: Check,
-      href: "/habit-tracker",
-      isLoading: isHabitsLoading,
-    },
-    {
-      title: "PRÓXIMO EVENTO",
-      value: nextEvent,
-      icon: Calendar,
-      href: "/weekly-planning",
-      isLoading: isWeeklyPlanLoading,
-    },
-  ];
+type OverviewCardProps = {
+  title: string;
+  value: string;
+  icon: React.ElementType;
+  href: string;
+  isLoading: boolean;
+};
+
+const OverviewCard = ({ title, value, icon: Icon, href, isLoading }: OverviewCardProps) => (
+  <Link href={href}>
+    <Card className="p-6 flex flex-col justify-between group h-full">
+      <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-4">
+          <Icon className="h-6 w-6 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">{title}</p>
+        </div>
+        <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+      </div>
+      {isLoading ? <Skeleton className="h-9 w-3/4 mt-1" /> : <p className="text-3xl font-bold">{value}</p>}
+    </Card>
+  </Link>
+);
+
+
+// --- Funções Utilitárias ---
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+// --- Componente Principal ---
+
+export default function Home() {
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { data: userDoc, isLoading: isUserDocLoading } = useUserDocument(user?.uid);
 
   if (isAuthLoading) {
      return (
@@ -131,20 +148,10 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {overviewCards.map((card) => (
-          <Link href={card.href} key={card.title}>
-            <Card className="p-6 flex flex-col justify-between group h-full">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col gap-4">
-                  <card.icon className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">{card.title}</p>
-                </div>
-                <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              </div>
-              {card.isLoading ? <Skeleton className="h-9 w-3/4 mt-1" /> : <p className="text-3xl font-bold">{card.value}</p>}
-            </Card>
-          </Link>
-        ))}
+        <ActiveGoalsCard />
+        <CurrentBalanceCard />
+        <HabitsTodayCard />
+        <NextEventCard />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -154,7 +161,9 @@ export default function Home() {
                 <Heart className="h-6 w-6 text-muted-foreground" />
                 <h3 className="text-lg font-semibold">Valores Centrais</h3>
               </div>
-              <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+               <Link href="/annual-goals">
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+               </Link>
             </div>
             <div className="flex items-center gap-4 mt-8">
               {isUserDocLoading ? <Skeleton className="h-6 w-full" /> : (userDoc?.coreValues ? (
@@ -189,5 +198,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
