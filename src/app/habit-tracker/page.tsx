@@ -209,7 +209,6 @@ export default function HabitTrackerPage() {
       </Card>
       
       <footer className="text-center text-xs text-muted-foreground mt-auto py-4">
-        © 2024 PLANNER STUDIES - BUILT FOR PERFORMANCE
       </footer>
     </div>
   );
