@@ -4,6 +4,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { Sidebar } from '@/components/layout/sidebar';
 import { FloatingNav } from '@/components/layout/floating-nav';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { Inter, Archivo } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const archivo = Archivo({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-archivo',
+  weight: '700',
+});
 
 export const metadata: Metadata = {
   title: 'Zenith Mastery',
@@ -16,13 +30,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${inter.variable} ${archivo.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background">
           <div className="flex">
@@ -37,6 +47,7 @@ export default function RootLayout({
             <FloatingNav />
           </div>
           <Toaster />
+          <FirebaseErrorListener />
       </body>
     </html>
   );

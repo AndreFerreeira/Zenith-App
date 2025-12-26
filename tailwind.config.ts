@@ -10,9 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        archivio: ['Archivo', 'sans-serif'],
-        code: ['monospace'],
+        body: ['var(--font-inter)', 'sans-serif'],
+        archivio: ['var(--font-archivo)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
