@@ -42,13 +42,13 @@ const HabitsTodayCard = () => {
   const { user } = useAuth();
   const today = new Date();
   const habitsKey = format(today, 'yyyy-MM');
+  const dayOfMonth = today.getDate();
   const { data: habits, isLoading } = useHabits(user?.uid, habitsKey);
   const value = React.useMemo(() => {
     if (!habits) return "0/0";
-    const dayOfMonth = today.getDate();
     const completedCount = habits.filter(h => h.completedDays.includes(dayOfMonth)).length;
     return `${completedCount}/${habits.length}`;
-  }, [habits, today]);
+  }, [habits, dayOfMonth]);
 
   return <OverviewCard title="HÁBITOS HOJE" value={value} icon={Check} href="/habit-tracker" isLoading={isLoading} />;
 };
@@ -60,7 +60,9 @@ const NextEventCard = () => {
   const { data: weeklyPlan, isLoading } = useWeeklyPlan(user?.uid);
   const value = React.useMemo(() => {
     if (!weeklyPlan) return "Livre";
-    const todayPlan = weeklyPlan.find(d => d.day === dayOfWeek);
+    const dayOrder = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+    const sortedPlan = [...weeklyPlan].sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
+    const todayPlan = sortedPlan.find(d => d.day === dayOfWeek);
     return todayPlan?.tasks[0]?.name || "Livre";
   }, [weeklyPlan, dayOfWeek]);
   
@@ -78,8 +80,8 @@ type OverviewCardProps = {
 };
 
 const OverviewCard = ({ title, value, icon: Icon, href, isLoading }: OverviewCardProps) => (
-  <Link href={href}>
-    <Card className="p-6 flex flex-col justify-between group h-full">
+  <Link href={href} className="flex">
+    <Card className="p-6 flex flex-col justify-between group h-full w-full">
       <div className="flex justify-between items-start">
         <div className="flex flex-col gap-4">
           <Icon className="h-6 w-6 text-muted-foreground" />
