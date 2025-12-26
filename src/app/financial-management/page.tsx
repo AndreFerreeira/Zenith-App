@@ -29,10 +29,12 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import type { Transaction, WishlistItem } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-import { format, getMonth, getYear, startOfMonth, parse, set } from 'date-fns';
+import { format, getMonth, getYear, startOfMonth, parse, set, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/firebase/auth/provider';
+import { useTransactions, useWishlist, useUserDocument, addTransaction, deleteTransaction, addWishlistItem, deleteWishlistItem, updateUserDocument } from '@/firebase/firestore/data-hooks';
+import type { Transaction, WishlistItem } from '@/firebase/firestore/data-hooks';
 
 const chartConfig = {
   balance: {
@@ -42,92 +44,76 @@ const chartConfig = {
 };
 
 export default function FinancialManagementPage() {
-  const [evolutionGoal, setEvolutionGoal] = React.useState(50000);
+  const { user } = useAuth();
+  const { data: userDoc, isLoading: isUserDocLoading } = useUserDocument(user?.uid);
+  const { data: transactions, isLoading: isTransactionsLoading } = useTransactions(user?.uid);
+  const { data: wishlist, isLoading: isWishlistLoading } = useWishlist(user?.uid);
+
+  const [evolutionGoal, setEvolutionGoal] = React.useState(0);
   const [newTransactionDesc, setNewTransactionDesc] = React.useState("");
   const [newTransactionValue, setNewTransactionValue] = React.useState("");
   const [newTransactionType, setNewTransactionType] = React.useState<"entrada" | "saida">("saida");
-  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [newWishlistItem, setNewWishlistItem] = React.useState("");
-  const [wishlist, setWishlist] = React.useState<WishlistItem[]>([]);
 
   const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
-
+  
   React.useEffect(() => {
-    try {
-      const savedTransactions = localStorage.getItem('financialTransactions');
-      const savedWishlist = localStorage.getItem('financialWishlist');
-      const savedGoal = localStorage.getItem('financialGoal');
-
-      if (savedTransactions) {
-        setTransactions(JSON.parse(savedTransactions).map((t: any) => ({ ...t, date: new Date(t.date) })));
-      }
-      if (savedWishlist) {
-        setWishlist(JSON.parse(savedWishlist));
-      }
-      if (savedGoal) {
-        setEvolutionGoal(JSON.parse(savedGoal));
-      }
-    } catch (error) {
-      console.error("Failed to parse from localStorage", error);
+    if (userDoc?.financialGoal) {
+      setEvolutionGoal(userDoc.financialGoal);
     }
-  }, []);
+  }, [userDoc]);
 
-  React.useEffect(() => {
-    localStorage.setItem('financialTransactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  React.useEffect(() => {
-    localStorage.setItem('financialWishlist', JSON.stringify(wishlist));
-  }, [wishlist]);
-
-  React.useEffect(() => {
-    localStorage.setItem('financialGoal', JSON.stringify(evolutionGoal));
-  }, [evolutionGoal]);
-
+  const handleGoalBlur = () => {
+    if (user?.uid && userDoc?.financialGoal !== evolutionGoal) {
+      updateUserDocument(user.uid, { financialGoal: evolutionGoal });
+    }
+  };
 
   const handleAddTransaction = () => {
+    if (!user?.uid) return;
     const value = parseFloat(newTransactionValue);
     if (newTransactionDesc.trim() === "" || isNaN(value)) return;
 
     const transactionDate = set(new Date(), { year: selectedYear, month: selectedMonth, date: 1 });
 
-    const newTransaction: Transaction = {
-      id: Math.random().toString(),
+    const newTransaction = {
       description: newTransactionDesc,
       amount: value,
       type: newTransactionType,
-      date: transactionDate,
+      date: transactionDate.toISOString(),
     };
 
-    setTransactions([...transactions, newTransaction]);
+    addTransaction(user.uid, newTransaction);
     setNewTransactionDesc("");
     setNewTransactionValue("");
   };
 
   const handleRemoveTransaction = (id: string) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+    if (!user?.uid) return;
+    deleteTransaction(user.uid, id);
   };
 
   const handleAddWishlistItem = () => {
-    if (newWishlistItem.trim() === "") return;
-    const newItem: WishlistItem = {
-      id: Math.random().toString(),
-      name: newWishlistItem,
-    };
-    setWishlist([...wishlist, newItem]);
+    if (!user?.uid || newWishlistItem.trim() === "") return;
+    addWishlistItem(user.uid, { name: newWishlistItem });
     setNewWishlistItem("");
   };
 
   const handleRemoveWishlistItem = (id: string) => {
-    setWishlist(wishlist.filter(item => item.id !== id));
+    if (!user?.uid) return;
+    deleteWishlistItem(user.uid, id);
   };
   
-  const totalGains = transactions
+  const parsedTransactions = React.useMemo(() => 
+    (transactions || []).map(t => ({ ...t, date: parseISO(t.date) }))
+  , [transactions]);
+
+  const totalGains = parsedTransactions
     .filter(t => t.type === 'entrada')
     .reduce((acc, t) => acc + t.amount, 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = parsedTransactions
     .filter(t => t.type === 'saida')
     .reduce((acc, t) => acc + t.amount, 0);
 
@@ -144,17 +130,16 @@ export default function FinancialManagementPage() {
 
   const years = Array.from({ length: 7 }, (_, i) => 2024 + i);
   
-  const filteredTransactions = transactions.filter(
+  const filteredTransactions = parsedTransactions.filter(
     (t) => getMonth(t.date) === selectedMonth && getYear(t.date) === selectedYear
   );
 
   const chartData = React.useMemo(() => {
-    const allTransactions = [...transactions];
+    const allTransactions = [...parsedTransactions];
     allTransactions.sort((a,b) => a.date.getTime() - b.date.getTime());
   
     const monthlyData: { [key: string]: number } = {};
   
-    // Initialize all months of all years present in transactions
     allTransactions.forEach(t => {
       const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
       if (!monthlyData[monthKey]) {
@@ -162,7 +147,6 @@ export default function FinancialManagementPage() {
       }
     });
     
-    // Calculate net change for each month
     allTransactions.forEach(t => {
       const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
       if (t.type === 'entrada') {
@@ -184,8 +168,8 @@ export default function FinancialManagementPage() {
       };
     });
   
-    return chartPoints.slice(-6); // Show last 6 months
-  }, [transactions]);
+    return chartPoints.slice(-6);
+  }, [parsedTransactions]);
 
 
   return (
@@ -216,6 +200,7 @@ export default function FinancialManagementPage() {
                 type="number" 
                 value={evolutionGoal}
                 onChange={(e) => setEvolutionGoal(parseFloat(e.target.value) || 0)}
+                onBlur={handleGoalBlur}
                 className="bg-transparent border-none text-2xl font-bold p-0 h-auto focus-visible:ring-0"
               />
           </CardContent>
@@ -368,11 +353,11 @@ export default function FinancialManagementPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col text-center">
-                    {wishlist.length === 0 ? (
+                    {isWishlistLoading ? <p>Carregando...</p> : (wishlist || []).length === 0 ? (
                       <p className="text-muted-foreground mb-4 m-auto">SUA LISTA ESTÁ VAZIA</p>
                     ) : (
                       <div className='space-y-2 overflow-y-auto'>
-                      {wishlist.map(item => (
+                      {(wishlist || []).map(item => (
                         <div key={item.id} className="flex items-center justify-between bg-card p-2 rounded-md group">
                           <span className="text-sm">{item.name}</span>
                           <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveWishlistItem(item.id)}>

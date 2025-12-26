@@ -1,18 +1,20 @@
 
 "use client";
-import { Bell, Home } from "lucide-react";
+import { Bell, Home, LogOut } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePathname } from "next/navigation";
-import { Skeleton } from "../ui/skeleton";
+import { useAuth } from "@/firebase/auth/provider";
+import { signOut } from "@/firebase/auth/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
+    const { user } = useAuth();
     const pathname = usePathname();
     const pageName = pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').toUpperCase() || 'HOME';
-    
-    // Don't render header on login page
-    if (pathname === '/login') {
-      return null;
-    }
+
+    const handleSignOut = async () => {
+        await signOut();
+    };
 
     return (
         <header className="flex justify-between items-center">
@@ -24,6 +26,22 @@ export function Header() {
                 <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5 text-muted-foreground" />
                 </Button>
+                {user && (
+                    <>
+                        <div className="flex items-center gap-2">
+                           <Avatar className="h-8 w-8">
+                                <AvatarImage src={user.photoURL || undefined} />
+                                <AvatarFallback>{user.displayName?.[0] || user.email?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="text-sm font-semibold">{user.displayName || user.email}</p>
+                            </div>
+                        </div>
+                         <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                            <LogOut className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                    </>
+                )}
             </div>
         </header>
     )

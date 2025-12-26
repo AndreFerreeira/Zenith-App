@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import type { MonthlyHabit } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,82 +23,41 @@ import {
 } from "lucide-react";
 import { addMonths, format, getDaysInMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-const initialMonthlyHabits: MonthlyHabit[] = [
-    {
-        id: 'mh1',
-        name: 'TESTE',
-        completedDays: [1, 2, 4, 5, 8, 9, 10, 11, 12, 15, 18, 20, 22, 25, 28, 29, 30]
-    },
-    {
-        id: 'mh2',
-        name: 'LEITURA',
-        completedDays: [3, 6, 7, 13, 14, 16, 17, 19, 21, 23, 24, 26, 27, 31]
-    }
-]
+import { useAuth } from "@/firebase/auth/provider";
+import { useHabits, addHabit, updateHabit, deleteHabit } from "@/firebase/firestore/data-hooks";
+import type { Habit } from "@/firebase/firestore/data-hooks";
 
 export default function HabitTrackerPage() {
-  const [monthlyHabits, setMonthlyHabits] = React.useState<MonthlyHabit[]>([]);
-  const [newHabitName, setNewHabitName] = React.useState("");
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = React.useState(new Date());
+  const monthKey = format(currentDate, 'yyyy-MM');
 
-  const getStorageKey = (date: Date) => {
-    return `monthlyHabits_${format(date, 'yyyy-MM')}`;
-  }
-
-  React.useEffect(() => {
-    try {
-      const savedHabits = localStorage.getItem(getStorageKey(currentDate));
-      if (savedHabits) {
-        setMonthlyHabits(JSON.parse(savedHabits));
-      } else {
-        if (format(currentDate, 'yyyy-MM') === format(new Date(), 'yyyy-MM')) {
-            setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
-        } else {
-            setMonthlyHabits([]);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to parse from localStorage", error);
-      setMonthlyHabits(initialMonthlyHabits.map(habit => ({ ...habit, id: habit.id || Math.random().toString() })));
-    }
-  }, [currentDate]);
-
-  React.useEffect(() => {
-    if (monthlyHabits.length > 0) {
-      localStorage.setItem(getStorageKey(currentDate), JSON.stringify(monthlyHabits));
-    }
-  }, [monthlyHabits, currentDate]);
+  const { data: monthlyHabits, isLoading } = useHabits(user?.uid, monthKey);
+  const [newHabitName, setNewHabitName] = React.useState("");
 
   const daysInMonth = Array.from({ length: getDaysInMonth(currentDate) }, (_, i) => i + 1);
 
   const handleAddHabit = () => {
-    if (newHabitName.trim() === "") return;
-    const newHabit: MonthlyHabit = {
-      id: Math.random().toString(),
-      name: newHabitName,
+    if (!user?.uid || newHabitName.trim() === "") return;
+    addHabit(user.uid, {
+      name: newHabitName.trim(),
+      month: monthKey,
       completedDays: [],
-    };
-    setMonthlyHabits([...monthlyHabits, newHabit]);
+    });
     setNewHabitName("");
   };
 
-  const handleToggleHabit = (habitId: string, day: number) => {
-    setMonthlyHabits(
-      monthlyHabits.map((habit) => {
-        if (habit.id === habitId) {
-          const completedDays = habit.completedDays.includes(day)
-            ? habit.completedDays.filter((d) => d !== day)
-            : [...habit.completedDays, day];
-          return { ...habit, completedDays };
-        }
-        return habit;
-      })
-    );
+  const handleToggleHabit = (habit: Habit, day: number) => {
+    if (!user?.uid) return;
+    const completedDays = habit.completedDays.includes(day)
+      ? habit.completedDays.filter((d) => d !== day)
+      : [...habit.completedDays, day];
+    updateHabit(user.uid, habit.id, { completedDays });
   };
   
   const handleDeleteHabit = (habitId: string) => {
-    setMonthlyHabits(monthlyHabits.filter(habit => habit.id !== habitId));
+    if (!user?.uid) return;
+    deleteHabit(user.uid, habitId);
   };
   
   const handlePreviousMonth = () => {
@@ -174,7 +132,9 @@ export default function HabitTrackerPage() {
                 </tr>
               </thead>
               <tbody>
-                {monthlyHabits.map((habit) => (
+                {isLoading ? (
+                  <tr><td colSpan={daysInMonth.length + 1}>Carregando hábitos...</td></tr>
+                ) : (monthlyHabits || []).map((habit) => (
                   <React.Fragment key={habit.id}>
                     <tr>
                       <td className="py-4 text-sm font-medium h-10">
@@ -190,7 +150,7 @@ export default function HabitTrackerPage() {
                           <Checkbox
                             className="w-7 h-7 bg-black/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground rounded-md border-none"
                             checked={habit.completedDays.includes(day)}
-                            onCheckedChange={() => handleToggleHabit(habit.id, day)}
+                            onCheckedChange={() => handleToggleHabit(habit, day)}
                           />
                         </td>
                       ))}

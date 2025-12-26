@@ -1,10 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { Sidebar } from '@/components/layout/sidebar';
-import { FloatingNav } from '@/components/layout/floating-nav';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { AuthProvider } from '@/firebase/auth/provider';
 import { Inter, Archivo } from 'next/font/google';
+import { AppContent } from '@/components/layout/app-content';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,19 +35,10 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className="font-body antialiased bg-background">
-          <div className="flex">
-            <div className='hidden md:block'>
-              <Sidebar />
-            </div>
-            <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen flex flex-col pb-28">
-              {children}
-            </main>
-          </div>
-          <div className='md:hidden'>
-            <FloatingNav />
-          </div>
+        <AuthProvider>
+          <AppContent>{children}</AppContent>
           <Toaster />
-          <FirebaseErrorListener />
+        </AuthProvider>
       </body>
     </html>
   );

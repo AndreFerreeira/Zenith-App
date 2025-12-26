@@ -7,100 +7,52 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowUpRight, Check, SlidersHorizontal, Target, Wallet, Calendar, Sparkles, Heart, CircleDashed } from "lucide-react";
 import Link from "next/link";
-import type { Transaction, MonthlyHabit, Goal, WeeklyDay } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type AnnualGoalSection = {
-  title: string;
-  goals: { id: string; text: string; completed: boolean }[];
-};
-
+import { useAuth } from '@/firebase/auth/provider';
+import { useAnnualGoals, useTransactions, useHabits, useWeeklyPlan, useUserDocument } from '@/firebase/firestore/data-hooks';
+import { format, parseISO } from 'date-fns';
 
 export default function Home() {
-  const [activeGoals, setActiveGoals] = React.useState(0);
-  const [currentBalance, setCurrentBalance] = React.useState(0);
-  const [habitsToday, setHabitsToday] = React.useState({ completed: 0, total: 0 });
-  const [nextEvent, setNextEvent] = React.useState("Livre");
-  const [coreValues, setCoreValues] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const { user, isLoading: isAuthLoading } = useAuth();
+  
+  const { data: goals, isLoading: isGoalsLoading } = useAnnualGoals(user?.uid);
+  const { data: transactions, isLoading: isTransactionsLoading } = useTransactions(user?.uid);
+  
+  const today = new Date();
+  const habitsKey = format(today, 'yyyy-MM');
+  const { data: habits, isLoading: isHabitsLoading } = useHabits(user?.uid, habitsKey);
+  
+  const dayOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][today.getDay()];
+  const { data: weeklyPlan, isLoading: isWeeklyPlanLoading } = useWeeklyPlan(user?.uid);
+  const { data: userDoc, isLoading: isUserDocLoading } = useUserDocument(user?.uid);
+  
+  const isLoading = isAuthLoading || isGoalsLoading || isTransactionsLoading || isHabitsLoading || isWeeklyPlanLoading || isUserDocLoading;
 
+  const activeGoals = React.useMemo(() => {
+    if (!goals) return 0;
+    return goals.filter(goal => !goal.completed).length;
+  }, [goals]);
 
-  React.useEffect(() => {
-    // This function will run on the client, so window is available.
-    const calculateOverview = () => {
-      // 1. Active Goals
-      try {
-        const savedGoals = localStorage.getItem("annualGoals");
-        if (savedGoals) {
-          const parsedGoals: AnnualGoalSection[] = JSON.parse(savedGoals);
-          const totalIncomplete = parsedGoals.reduce((acc, section) => {
-            return acc + section.goals.filter(goal => !goal.completed).length;
-          }, 0);
-          setActiveGoals(totalIncomplete);
-        }
-      } catch (e) { console.error("Failed to parse annual goals", e)}
+  const currentBalance = React.useMemo(() => {
+    if (!transactions) return 0;
+    const parsedTransactions = transactions.map(t => ({...t, date: parseISO(t.date)}));
+    const totalGains = parsedTransactions.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
+    const totalExpenses = parsedTransactions.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
+    return totalGains - totalExpenses;
+  }, [transactions]);
 
+  const habitsToday = React.useMemo(() => {
+    if (!habits) return { completed: 0, total: 0 };
+    const dayOfMonth = today.getDate();
+    const completedCount = habits.filter(h => h.completedDays.includes(dayOfMonth)).length;
+    return { completed: completedCount, total: habits.length };
+  }, [habits, today]);
 
-      // 2. Current Balance
-      try {
-        const savedTransactions = localStorage.getItem("financialTransactions");
-        if (savedTransactions) {
-          const transactions: Transaction[] = JSON.parse(savedTransactions);
-          const totalGains = transactions.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
-          const totalExpenses = transactions.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
-          setCurrentBalance(totalGains - totalExpenses);
-        }
-      } catch(e) { console.error("Failed to parse financial transactions", e)}
-
-      // 3. Habits Today
-      try {
-        const today = new Date();
-        const storageKey = `monthlyHabits_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        const savedHabits = localStorage.getItem(storageKey);
-        if (savedHabits) {
-          const habits: MonthlyHabit[] = JSON.parse(savedHabits);
-          const dayOfMonth = today.getDate();
-          const completedCount = habits.filter(h => h.completedDays.includes(dayOfMonth)).length;
-          setHabitsToday({ completed: completedCount, total: habits.length });
-        }
-      } catch(e) { console.error("Failed to parse habits", e)}
-
-
-      // 4. Next Event
-      try {
-        const savedWeeklyPlan = localStorage.getItem("weeklyPlan");
-        if (savedWeeklyPlan) {
-          const weeklyPlan: WeeklyDay[] = JSON.parse(savedWeeklyPlan);
-          const today = new Date();
-          const dayOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][today.getDay()];
-          const todayPlan = weeklyPlan.find(d => d.day === dayOfWeek);
-          setNextEvent(todayPlan?.tasks[0]?.name || "Livre");
-        }
-      } catch (e) { console.error("Failed to parse weekly plan", e)}
-
-      // Core Values
-      try {
-        const savedValues = localStorage.getItem("coreValues");
-        if (savedValues) {
-            const parsedValues = JSON.parse(savedValues);
-            if (parsedValues && typeof parsedValues === 'string' && parsedValues.trim() !== '') {
-                setCoreValues(parsedValues);
-            }
-        }
-      } catch (e) { console.error("Failed to parse core values", e)}
-      setIsLoading(false);
-    };
-
-    calculateOverview();
-    
-    // Optional: Re-calculate when storage changes (e.g., in another tab)
-    window.addEventListener('storage', calculateOverview);
-    
-    return () => {
-      window.removeEventListener('storage', calculateOverview);
-    }
-
-  }, []);
+  const nextEvent = React.useMemo(() => {
+    if (!weeklyPlan) return "Livre";
+    const todayPlan = weeklyPlan.find(d => d.day === dayOfWeek);
+    return todayPlan?.tasks[0]?.name || "Livre";
+  }, [weeklyPlan, dayOfWeek]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -206,8 +158,8 @@ export default function Home() {
               <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <div className="flex items-center gap-4 mt-8">
-              {coreValues ? (
-                 <p className="text-muted-foreground italic">"{coreValues}"</p>
+              {userDoc?.coreValues ? (
+                 <p className="text-muted-foreground italic">"{userDoc.coreValues}"</p>
               ) : (
                 <>
                   <CircleDashed className="h-10 w-10 text-muted-foreground/20" />

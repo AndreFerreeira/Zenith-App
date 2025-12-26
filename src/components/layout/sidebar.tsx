@@ -14,21 +14,20 @@ import {
   CheckCircle,
   SlidersHorizontal,
 } from "lucide-react";
-import { useAnnualGoalsProgress } from "@/hooks/use-annual-goals-progress";
-
-const navItems = [
-  { name: "VISÃO GERAL", icon: LayoutDashboard, href: "/" },
-  { name: "IA ASSISTENTE", icon: Sparkles, href: "/ia-assistant" },
-  { name: "METAS DO ANO", icon: Target, href: "/annual-goals" },
-  { name: "GESTÃO FINANCEIRA", icon: Wallet, href: "/financial-management" },
-  { name: "ESTRATÉGIA MENSAL", icon: Calendar, href: "/monthly-strategy" },
-  { name: "HABIT TRACKER", icon: CheckCircle, href: "/habit-tracker" },
-  { name: "PLANEJAMENTO SEMANAL", icon: SlidersHorizontal, href: "/weekly-planning" },
-];
+import { useAuth } from "@/firebase/auth/provider";
+import { useAnnualGoals } from "@/firebase/firestore/data-hooks";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { progress } = useAnnualGoalsProgress();
+  const { user } = useAuth();
+  const { data: goals } = useAnnualGoals(user?.uid);
+
+  const progress = React.useMemo(() => {
+    if (!goals || goals.length === 0) return 0;
+    const completedGoals = goals.filter(g => g.completed).length;
+    return (completedGoals / goals.length) * 100;
+  }, [goals]);
+
   const circumference = 2 * Math.PI * 40;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
@@ -89,3 +88,13 @@ export function Sidebar() {
     </aside>
   );
 }
+
+const navItems = [
+  { name: "VISÃO GERAL", icon: LayoutDashboard, href: "/" },
+  { name: "IA ASSISTENTE", icon: Sparkles, href: "/ia-assistant" },
+  { name: "METAS DO ANO", icon: Target, href: "/annual-goals" },
+  { name: "GESTÃO FINANCEIRA", icon: Wallet, href: "/financial-management" },
+  { name: "ESTRATÉGIA MENSAL", icon: Calendar, href: "/monthly-strategy" },
+  { name: "HABIT TRACKER", icon: CheckCircle, href: "/habit-tracker" },
+  { name: "PLANEJAMENTO SEMANAL", icon: SlidersHorizontal, href: "/weekly-planning" },
+];

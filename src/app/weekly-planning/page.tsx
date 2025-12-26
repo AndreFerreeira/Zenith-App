@@ -4,19 +4,14 @@
 import * as React from "react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent } from "@/components/ui/card";
-import { weeklyPlan as initialWeeklyPlan } from "@/lib/data";
-import type { WeeklyDay, WeeklyTask, TaskCategory } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Plus, X, NotebookPen } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-
-const categoryMapping: Record<string, TaskCategory> = {
-  PES: 'PESSOAL',
-  PRO: 'PROFISSIONAL',
-  MAT: 'MATERIAL',
-};
+import { useAuth } from "@/firebase/auth/provider";
+import { useWeeklyPlan, useUserDocument, updateWeeklyPlan, updateUserDocument } from '@/firebase/firestore/data-hooks';
+import type { WeeklyDay, WeeklyTask, TaskCategory } from "@/firebase/firestore/data-hooks";
 
 const categoryButtons: { label: 'PES' | 'PRO' | 'MAT', category: TaskCategory }[] = [
     { label: 'PES', category: 'PESSOAL' },
@@ -25,40 +20,40 @@ const categoryButtons: { label: 'PES' | 'PRO' | 'MAT', category: TaskCategory }[
 ];
 
 export default function WeeklyPlanningPage() {
+  const { user } = useAuth();
+  const { data: weeklyPlanData, isLoading: isPlanLoading } = useWeeklyPlan(user?.uid);
+  const { data: userDoc, isLoading: isDocLoading } = useUserDocument(user?.uid);
+
   const [weeklyPlan, setWeeklyPlan] = React.useState<WeeklyDay[]>([]);
   const [newTasks, setNewTasks] = React.useState<Record<string, string>>({});
   const [selectedCategories, setSelectedCategories] = React.useState<Record<string, TaskCategory>>({});
   const [quickNotes, setQuickNotes] = React.useState("");
 
   React.useEffect(() => {
-    try {
-      const savedPlan = localStorage.getItem("weeklyPlan");
-      const savedNotes = localStorage.getItem("weeklyQuickNotes");
-      if (savedPlan) {
-        setWeeklyPlan(JSON.parse(savedPlan));
-      } else {
-        setWeeklyPlan(initialWeeklyPlan);
-      }
-      if (savedNotes) {
-        setQuickNotes(JSON.parse(savedNotes));
-      }
-    } catch (error) {
-      console.error("Failed to parse from localStorage", error);
-      setWeeklyPlan(initialWeeklyPlan);
+    if (weeklyPlanData) {
+      setWeeklyPlan(weeklyPlanData);
     }
-  }, []);
+    if (userDoc?.quickNotes) {
+      setQuickNotes(userDoc.quickNotes);
+    }
+  }, [weeklyPlanData, userDoc]);
 
-  React.useEffect(() => {
-    if (weeklyPlan.length > 0) {
-      localStorage.setItem("weeklyPlan", JSON.stringify(weeklyPlan));
+  const handleUpdatePlan = (newPlan: WeeklyDay[]) => {
+    if (user?.uid) {
+      // We need to update the whole array in firestore
+      // Firestore doesn't deep-merge array elements, so we replace the whole field.
+      // This is inefficient but necessary for this data structure.
+      newPlan.forEach(day => {
+        updateWeeklyPlan(user.uid, day.id, { tasks: day.tasks });
+      });
     }
-  }, [weeklyPlan]);
+  };
 
-  React.useEffect(() => {
-    if (quickNotes) {
-      localStorage.setItem("weeklyQuickNotes", JSON.stringify(quickNotes));
+  const handleNotesBlur = () => {
+    if (user?.uid && userDoc?.quickNotes !== quickNotes) {
+      updateUserDocument(user.uid, { quickNotes: quickNotes });
     }
-  }, [quickNotes]);
+  };
 
   const handleNewTaskChange = (day: string, value: string) => {
     setNewTasks(prev => ({ ...prev, [day]: value }));
@@ -68,30 +63,33 @@ export default function WeeklyPlanningPage() {
     setSelectedCategories(prev => ({ ...prev, [day]: category }));
   };
 
-  const handleAddTask = (day: string) => {
-    const taskName = newTasks[day];
-    if (!taskName || taskName.trim() === "") return;
+  const handleAddTask = (dayId: string, dayName: string) => {
+    const taskName = newTasks[dayName];
+    if (!taskName || taskName.trim() === "" || !user?.uid) return;
 
     const newTask: WeeklyTask = {
       name: taskName.trim(),
-      category: selectedCategories[day] || 'PESSOAL',
+      category: selectedCategories[dayName] || 'PESSOAL',
     };
 
-    setWeeklyPlan(prevPlan =>
-      prevPlan.map(d =>
-        d.day === day ? { ...d, tasks: [...d.tasks, newTask] } : d
-      )
+    const newPlan = weeklyPlan.map(d =>
+      d.id === dayId ? { ...d, tasks: [...d.tasks, newTask] } : d
     );
-
-    handleNewTaskChange(day, "");
+    
+    setWeeklyPlan(newPlan);
+    handleUpdatePlan(newPlan);
+    handleNewTaskChange(dayName, "");
   };
   
-  const handleRemoveTask = (day: string, taskIndex: number) => {
-    setWeeklyPlan(prevPlan =>
-      prevPlan.map(d =>
-        d.day === day ? { ...d, tasks: d.tasks.filter((_, i) => i !== taskIndex) } : d
-      )
+  const handleRemoveTask = (dayId: string, taskIndex: number) => {
+    if (!user?.uid) return;
+
+    const newPlan = weeklyPlan.map(d =>
+      d.id === dayId ? { ...d, tasks: d.tasks.filter((_, i) => i !== taskIndex) } : d
     );
+    
+    setWeeklyPlan(newPlan);
+    handleUpdatePlan(newPlan);
   };
 
 
@@ -109,7 +107,7 @@ export default function WeeklyPlanningPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {weeklyPlan.map((day) => (
-          <Card key={day.day} className="bg-card-foreground/5 border-none flex flex-col">
+          <Card key={day.id} className="bg-card-foreground/5 border-none flex flex-col">
             <CardContent className="p-4 flex flex-col flex-grow">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-sm">{day.day.toUpperCase()}</h3>
@@ -130,7 +128,7 @@ export default function WeeklyPlanningPage() {
                     }>
                       {task.category}
                     </Badge>
-                     <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto absolute top-1 right-1 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveTask(day.day, index)}>
+                     <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto absolute top-1 right-1 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveTask(day.id, index)}>
                         <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -164,9 +162,9 @@ export default function WeeklyPlanningPage() {
                       className="bg-card border-none h-9"
                       value={newTasks[day.day] || ""}
                       onChange={(e) => handleNewTaskChange(day.day, e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask(day.day)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask(day.id, day.day)}
                     />
-                    <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={() => handleAddTask(day.day)}>
+                    <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={() => handleAddTask(day.id, day.day)}>
                         <Plus className="h-5 w-5" />
                     </Button>
                 </div>
@@ -185,6 +183,7 @@ export default function WeeklyPlanningPage() {
               className="bg-transparent border-none flex-grow resize-none text-sm focus-visible:ring-0 px-0"
               value={quickNotes}
               onChange={(e) => setQuickNotes(e.target.value)}
+              onBlur={handleNotesBlur}
             />
         </Card>
       </div>

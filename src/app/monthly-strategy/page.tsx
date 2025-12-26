@@ -5,6 +5,9 @@ import * as React from 'react';
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from '@/firebase/auth/provider';
+import { useMonthlyStrategy, updateMonthlyStrategy } from '@/firebase/firestore/data-hooks';
+import { format } from 'date-fns';
 
 type StrategyContent = {
   focus: string;
@@ -13,6 +16,10 @@ type StrategyContent = {
 };
 
 export default function MonthlyStrategyPage() {
+  const { user } = useAuth();
+  const monthKey = format(new Date(), 'yyyy-MM');
+  const { data: strategy, isLoading } = useMonthlyStrategy(user?.uid, monthKey);
+
   const [content, setContent] = React.useState<StrategyContent>({
     focus: "",
     wins: "",
@@ -20,26 +27,21 @@ export default function MonthlyStrategyPage() {
   });
 
   React.useEffect(() => {
-    try {
-      const savedContent = localStorage.getItem("monthlyStrategy");
-      if (savedContent) {
-        setContent(JSON.parse(savedContent));
-      }
-    } catch (error) {
-      console.error("Failed to parse from localStorage", error);
+    if (strategy) {
+      setContent({
+        focus: strategy.focus || "",
+        wins: strategy.wins || "",
+        learnings: strategy.learnings || "",
+      });
     }
-  }, []);
-
-  React.useEffect(() => {
-    // This effect runs only when `content` changes, but not on the initial load.
-    // A check to prevent overwriting localStorage with initial empty state.
-    if (content.focus || content.wins || content.learnings) {
-        localStorage.setItem("monthlyStrategy", JSON.stringify(content));
-    }
-  }, [content]);
+  }, [strategy]);
 
   const handleContentChange = (field: keyof StrategyContent, value: string) => {
-    setContent(prev => ({ ...prev, [field]: value }));
+    const newContent = { ...content, [field]: value };
+    setContent(newContent);
+    if (user?.uid) {
+      updateMonthlyStrategy(user.uid, monthKey, newContent);
+    }
   };
 
   const strategySections = [
@@ -47,6 +49,10 @@ export default function MonthlyStrategyPage() {
     { title: "GRANDES VITÓRIAS", field: "wins", placeholder: "Escreva aqui...", value: content.wins },
     { title: "APRENDIZADOS", field: "learnings", placeholder: "Escreva aqui...", value: content.learnings },
   ] as const;
+
+  if (isLoading) {
+    return <div>Carregando estratégia...</div>;
+  }
 
   return (
     <div className="flex flex-col gap-8 h-full">

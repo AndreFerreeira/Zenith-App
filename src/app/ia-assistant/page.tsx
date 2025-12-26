@@ -12,30 +12,27 @@ import type { SuggestPersonalizedRoutinesInput, SuggestPersonalizedRoutinesOutpu
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
-import type { MonthlyHabit } from '@/lib/data';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-
+import { useAuth } from '@/firebase/auth/provider';
+import { useUserDocument, useAnnualGoals, useHabits, useTransactions, updateUserDocument, addAnnualGoal, addHabit, useAiMessages, updateAiMessages, updateAiNotes } from '@/firebase/firestore/data-hooks';
 
 type Message = {
   role: 'user' | 'assistant';
   content: string | SuggestPersonalizedRoutinesOutput;
 };
 
-type Goal = {
-  id: string;
-  text: string;
-  completed: boolean;
-};
-
-type GoalSection = {
-  title: "Pessoais" | "Profissionais" | "Materiais";
-  icon: React.ElementType;
-  goals: Goal[];
-};
-
-
 export default function IaAssistantPage() {
+  const { user } = useAuth();
+  const { data: userDoc } = useUserDocument(user?.uid);
+  const { data: goals } = useAnnualGoals(user?.uid);
+  
+  const today = new Date();
+  const habitsKey = format(today, 'yyyy-MM');
+  const { data: habits } = useHabits(user?.uid, habitsKey);
+  const { data: transactions } = useTransactions(user?.uid);
+  const { data: aiMessages } = useAiMessages(user?.uid);
+  
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
@@ -43,85 +40,51 @@ export default function IaAssistantPage() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    try {
-      const savedNotes = localStorage.getItem('aiAssistantNotes');
-      if (savedNotes) {
-        setNotes(JSON.parse(savedNotes));
-      }
-      const savedMessages = localStorage.getItem('aiAssistantMessages');
-      if (savedMessages) {
-        setMessages(JSON.parse(savedMessages));
-      }
-    } catch (error) {
-      console.error("Failed to parse from localStorage", error);
+    if (userDoc) {
+      setNotes(userDoc.aiNotes || '');
     }
-  }, []);
+    if (aiMessages) {
+      setMessages(aiMessages);
+    }
+  }, [userDoc, aiMessages]);
+
+  const handleUpdateNotes = () => {
+    if (user?.uid && notes !== userDoc?.aiNotes) {
+      updateAiNotes(user.uid, notes);
+    }
+  };
 
   React.useEffect(() => {
-    if (notes) {
-      localStorage.setItem('aiAssistantNotes', JSON.stringify(notes));
+    if (user?.uid && messages.length > 0) {
+      updateAiMessages(user.uid, messages);
     }
-  }, [notes]);
-
-  React.useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('aiAssistantMessages', JSON.stringify(messages));
-    } else {
-      // Clear from storage if messages array is empty
-      localStorage.removeItem('aiAssistantMessages');
-    }
-  }, [messages]);
+  }, [messages, user?.uid]);
 
 
   const getContextData = (theme: string): SuggestPersonalizedRoutinesInput => {
-    let habits: string[] = [];
-    let goals: string[] = [];
-    let financialData = "Nenhum dado financeiro.";
-    let dreamRoutine = "Não definido.";
-    let coreValues = "Não definido.";
-
-    try {
-      const today = new Date();
-      const habitsKey = `monthlyHabits_${format(today, 'yyyy-MM')}`;
-      const savedHabits = localStorage.getItem(habitsKey);
-      if (savedHabits) {
-        const parsedHabits = JSON.parse(savedHabits);
-        habits = parsedHabits.map((h: any) => h.name);
-      }
-
-      const savedGoals = localStorage.getItem("annualGoals");
-      if (savedGoals) {
-        const parsedGoals = JSON.parse(savedGoals);
-        parsedGoals.forEach((section: any) => {
-          section.goals.forEach((goal: any) => {
-            goals.push(goal.text);
-          });
-        });
-      }
-      
-      const savedRoutine = localStorage.getItem("dreamRoutine");
-      if(savedRoutine) dreamRoutine = JSON.parse(savedRoutine);
-
-      const savedValues = localStorage.getItem("coreValues");
-      if(savedValues) coreValues = JSON.parse(savedValues);
-
-      const savedTransactions = localStorage.getItem("financialTransactions");
-      if (savedTransactions) {
-        const transactions = JSON.parse(savedTransactions);
-        const totalGains = transactions.filter((t: any) => t.type === 'entrada').reduce((acc: number, t: any) => acc + t.amount, 0);
-        const totalExpenses = transactions.filter((t: any) => t.type === 'saida').reduce((acc: number, t: any) => acc + t.amount, 0);
-        const balance = totalGains - totalExpenses;
-        financialData = `Saldo atual: ${balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
-      }
-    } catch (e) {
-      console.error("Failed to read data from localStorage for AI assistant", e);
-    }
+    const habitNames = habits?.map(h => h.name) || [];
+    const goalTexts = goals?.map(g => g.text) || [];
     
-    return { theme, habits, goals, financialData, dreamRoutine, coreValues };
+    let financialData = "Nenhum dado financeiro.";
+    if (transactions) {
+      const totalGains = transactions.filter((t: any) => t.type === 'entrada').reduce((acc: number, t: any) => acc + t.amount, 0);
+      const totalExpenses = transactions.filter((t: any) => t.type === 'saida').reduce((acc: number, t: any) => acc + t.amount, 0);
+      const balance = totalGains - totalExpenses;
+      financialData = `Saldo atual: ${balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+    }
+
+    return {
+      theme,
+      habits: habitNames,
+      goals: goalTexts,
+      financialData,
+      dreamRoutine: userDoc?.dreamRoutine || "Não definido.",
+      coreValues: userDoc?.coreValues || "Não definido.",
+    };
   };
 
   const handleSendMessage = async () => {
-    if (input.trim() === '' || isLoading) return;
+    if (input.trim() === '' || isLoading || !user) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -143,59 +106,23 @@ export default function IaAssistantPage() {
   };
   
   const handleAddGoal = (goalText: string) => {
-    if (!goalText || goalText.trim() === "") return;
-    try {
-      const savedGoals = localStorage.getItem("annualGoals");
-      let goalSections: Omit<GoalSection, 'icon'>[] = savedGoals ? JSON.parse(savedGoals) : [
-        { title: "Pessoais", goals: [] },
-        { title: "Profissionais", goals: [] },
-        { title: "Materiais", goals: [] },
-      ];
-
-      const personalSection = goalSections.find(s => s.title === "Pessoais") || { title: "Pessoais", goals: []};
-      if (!goalSections.find(s => s.title === "Pessoais")) {
-        goalSections.push(personalSection);
-      }
-      
-      const newGoal: Goal = {
-        id: Math.random().toString(),
-        text: goalText,
-        completed: false,
-      };
-      personalSection.goals.push(newGoal);
-      
-      localStorage.setItem("annualGoals", JSON.stringify(goalSections));
-      toast({ title: "Meta adicionada!", description: `"${goalText}" foi adicionado às suas metas pessoais.` });
-    } catch (e) {
-      console.error("Failed to add goal to localStorage", e);
-      toast({ variant: 'destructive', title: "Erro!", description: "Não foi possível adicionar a meta." });
-    }
+    if (!user || !goalText || goalText.trim() === "") return;
+    addAnnualGoal(user.uid, { text: goalText, completed: false, category: 'Pessoais' });
+    toast({ title: "Meta adicionada!", description: `"${goalText}" foi adicionado às suas metas pessoais.` });
   };
 
   const handleAddHabit = (habitName: string) => {
-    if (!habitName || habitName.trim() === "") return;
-    try {
-      const today = new Date();
-      const storageKey = `monthlyHabits_${format(today, 'yyyy-MM')}`;
-      const savedHabits = localStorage.getItem(storageKey);
-      let monthlyHabits: MonthlyHabit[] = savedHabits ? JSON.parse(savedHabits) : [];
-      
-      const newHabit: MonthlyHabit = {
-        id: Math.random().toString(),
-        name: habitName,
-        completedDays: [],
-      };
-      
-      monthlyHabits.push(newHabit);
-      localStorage.setItem(storageKey, JSON.stringify(monthlyHabits));
-      toast({ title: "Hábito adicionado!", description: `"${habitName}" foi adicionado ao seu tracker de hábitos.` });
-    } catch (e) {
-      console.error("Failed to add habit to localStorage", e);
-      toast({ variant: 'destructive', title: "Erro!", description: "Não foi possível adicionar o hábito." });
-    }
+    if (!user || !habitName || habitName.trim() === "") return;
+    const today = new Date();
+    const monthKey = format(today, 'yyyy-MM');
+    addHabit(user.uid, { name: habitName, month: monthKey, completedDays: [] });
+    toast({ title: "Hábito adicionado!", description: `"${habitName}" foi adicionado ao seu tracker de hábitos.` });
   };
 
   const handleClearHistory = () => {
+    if (user?.uid) {
+      updateAiMessages(user.uid, []);
+    }
     setMessages([]);
     toast({ title: "Histórico limpo!", description: "Sua conversa com o assistente foi apagada." });
   };
@@ -374,6 +301,7 @@ export default function IaAssistantPage() {
                       className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0 px-0"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
+                      onBlur={handleUpdateNotes}
                   />
                 </CardContent>
             </Card>

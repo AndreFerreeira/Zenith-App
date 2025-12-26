@@ -9,6 +9,7 @@ import {
   where,
   type CollectionReference,
   type Query,
+  type DocumentData,
 } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { errorEmitter } from "../error-emitter";
@@ -18,39 +19,61 @@ interface UseCollectionOptions {
   listen?: boolean;
 }
 
-export function useCollection<T>(
-  path: string | null | undefined,
-  options?: UseCollectionOptions
-): { data: T[] | null; isLoading: boolean };
-export function useCollection<T>(
-  query: Query<T> | null | undefined,
-  options?: UseCollectionOptions
-): { data: T[] | null; isLoading: boolean };
-export function useCollection<T>(
-  ref: CollectionReference<T> | null | undefined,
-  options?: UseCollectionOptions
-): { data: T[] | null; isLoading: boolean };
-
-export function useCollection<T>(
+export function useCollection<T extends DocumentData>(
   pathOrQueryOrRef: string | Query<T> | CollectionReference<T> | null | undefined,
   options: UseCollectionOptions = { listen: true }
-): { data: T[] | null; isLoading: boolean } {
-  const [data, setData] = useState<T[] | null>(null);
+): { data: (T & { id: string })[] | null; isLoading: boolean } {
+  const [data, setData] = useState<(T & { id: string })[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (pathOrQueryOrRef === null || pathOrQueryOrRef === undefined) {
+    if (!pathOrQueryOrRef) {
       setData([]);
       setIsLoading(false);
       return;
     }
-    
-    // Since we removed authentication, we can't listen to user-specific collections.
-    // This hook will now only work for public collections or not at all.
-    // For now, we'll just return an empty array.
-    setData([]);
-    setIsLoading(false);
-    
+
+    let unsubscribe: () => void;
+    let q: Query<T> | CollectionReference<T>;
+
+    if (typeof pathOrQueryOrRef === "string") {
+      q = collection(firestore, pathOrQueryOrRef) as CollectionReference<T>;
+    } else {
+      q = pathOrQueryOrRef;
+    }
+
+    if (options.listen) {
+      unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const docs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setData(docs);
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error("Error listening to collection:", error);
+          if (error.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'path' in q ? q.path : 'unknown', // Simplified path
+                operation: 'list'
+            }));
+          }
+          setIsLoading(false);
+        }
+      );
+    } else {
+      // getDocs logic would go here if listen is false
+      setIsLoading(false);
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [pathOrQueryOrRef, options.listen]);
 
   return { data, isLoading };
