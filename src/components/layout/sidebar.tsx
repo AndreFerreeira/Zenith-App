@@ -14,7 +14,7 @@ import {
   CheckCircle,
   SlidersHorizontal,
 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { useAnnualGoalsProgress } from "@/hooks/use-annual-goals-progress";
 
 const navItems = [
   { name: "VISÃO GERAL", icon: LayoutDashboard, href: "/" },
@@ -28,6 +28,9 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { progress } = useAnnualGoalsProgress();
+  const circumference = 2 * Math.PI * 40;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
     <aside className="w-64 flex-shrink-0 bg-card p-4 flex flex-col justify-between min-h-screen">
@@ -66,10 +69,10 @@ export function Sidebar() {
                 <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
                     <circle className="text-muted-foreground/10" strokeWidth="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
                     <circle
-                        className="text-primary"
+                        className="text-primary transition-all duration-500"
                         strokeWidth="8"
-                        strokeDasharray={2 * Math.PI * 40}
-                        strokeDashoffset={(2 * Math.PI * 40) - (33 / 100) * (2 * Math.PI * 40)}
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
                         strokeLinecap="round"
                         stroke="currentColor"
                         fill="transparent"
@@ -78,7 +81,7 @@ export function Sidebar() {
                         cy="50"
                     />
                 </svg>
-                <span className="absolute text-xl font-bold">33%</span>
+                <span className="absolute text-xl font-bold">{Math.round(progress)}%</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">META CONCLUÍDA</p>
         </div>
