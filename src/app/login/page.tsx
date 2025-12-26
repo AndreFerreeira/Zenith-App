@@ -7,17 +7,17 @@ import { useUser } from '@/firebase';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '@/firebase/auth/auth';
 import { Button } from '@/components/ui/button';
 import { ZenithMasteryLogo } from '@/components/icons';
-import { Chrome, Mail } from 'lucide-react';
+import { Chrome } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/ui/card';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
@@ -196,4 +196,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
