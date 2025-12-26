@@ -4,7 +4,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ZenithMasteryLogo } from "@/components/icons";
+import { ZenithHabitosLogo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
@@ -36,10 +36,10 @@ export function Sidebar() {
     <aside className="w-64 flex-shrink-0 bg-card p-4 flex flex-col justify-between min-h-screen">
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <ZenithMasteryLogo className="h-8 w-8 text-primary" />
+          <ZenithHabitosLogo className="h-8 w-8 text-primary" />
           <div>
             <p className="text-sm font-bold">Zenith</p>
-            <p className="text-xs text-muted-foreground">Mastery OS</p>
+            <p className="text-xs text-muted-foreground">Hábitos</p>
           </div>
         </div>
         <div className="text-xs text-muted-foreground mb-8 ml-10">STRATEGIC ROUTINE</div>

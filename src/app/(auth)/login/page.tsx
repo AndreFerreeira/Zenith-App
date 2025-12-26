@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { ZenithMasteryLogo } from '@/components/icons';
+import { ZenithHabitosLogo } from '@/components/icons';
 import { Chrome } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail } from '@/firebase/auth/auth';
@@ -55,8 +55,8 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="w-full max-w-sm p-8 space-y-8 bg-card rounded-lg shadow-lg">
         <div className="flex flex-col items-center text-center">
-          <ZenithMasteryLogo className="h-12 w-12 text-primary mb-4" />
-          <h1 className="text-3xl font-bold tracking-tighter">Zenith Mastery</h1>
+          <ZenithHabitosLogo className="h-12 w-12 text-primary mb-4" />
+          <h1 className="text-3xl font-bold tracking-tighter">Zenith Hábitos</h1>
           <p className="text-muted-foreground">
             {isSignUp ? 'Crie sua conta para começar' : 'Acesse sua conta para continuar'}
           </p>
