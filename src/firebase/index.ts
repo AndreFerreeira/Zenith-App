@@ -3,7 +3,6 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 
-// Configuração do seu projeto Firebase
 export const firebaseConfig = {
   apiKey: "AIzaSyA0gflRnyzShnAIQrM0gl4VYc_UAXBDFfk",
   authDomain: "habitos-zenith.firebaseapp.com",
@@ -14,7 +13,25 @@ export const firebaseConfig = {
   measurementId: "G-EXV93TJH1W"
 };
 
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const firestore: Firestore = getFirestore(app);
-export const auth: Auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+
+// Singleton pattern to ensure Firebase is initialized only once
+let app: FirebaseApp;
+let auth: Auth;
+let firestore: Firestore;
+let googleProvider: GoogleAuthProvider;
+
+function initialize() {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  auth = getAuth(app);
+  firestore = getFirestore(app);
+  googleProvider = new GoogleAuthProvider();
+}
+
+// Initialize on load
+initialize();
+
+export { app, auth, firestore, googleProvider };
