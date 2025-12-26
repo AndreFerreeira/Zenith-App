@@ -38,13 +38,16 @@ export default function IaAssistantPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [notes, setNotes] = React.useState('');
   const { toast } = useToast();
+  
+  const isMounted = React.useRef(false);
 
   React.useEffect(() => {
     if (userDoc) {
       setNotes(userDoc.aiNotes || '');
     }
-    if (aiMessages) {
+    if (aiMessages && !isMounted.current) {
       setMessages(aiMessages);
+      isMounted.current = true;
     }
   }, [userDoc, aiMessages]);
 
@@ -55,10 +58,12 @@ export default function IaAssistantPage() {
   };
 
   React.useEffect(() => {
-    if (user?.uid && messages.length > 0) {
+    // Only update firestore if the local messages are different from remote
+    // and the component has mounted to prevent overwriting on initial load.
+    if (user?.uid && isMounted.current && JSON.stringify(messages) !== JSON.stringify(aiMessages)) {
       updateAiMessages(user.uid, messages);
     }
-  }, [messages, user?.uid]);
+  }, [messages, user?.uid, aiMessages]);
 
 
   const getContextData = (theme: string): SuggestPersonalizedRoutinesInput => {
