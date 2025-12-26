@@ -25,7 +25,7 @@ export const signInWithGoogle = async () => {
     return { user, token };
   } catch (error: any) {
     // Handle Errors here.
-    console.error(`Google Sign-In Error: [${error.code}] ${error.message}`);
+    // Re-throw the error to be caught by the calling UI
     throw error;
   }
 };
