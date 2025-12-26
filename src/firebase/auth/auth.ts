@@ -36,7 +36,7 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user };
   } catch (error: any) {
-    console.error("Email/Password Sign-Up Error:", error);
+    // Re-throw the error to be caught by the calling function
     throw error;
   }
 };
@@ -47,7 +47,7 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user };
   } catch (error: any) {
-    console.error("Email/Password Sign-In Error:", error);
+    // Re-throw the error to be caught by the calling function
     throw error;
   }
 };

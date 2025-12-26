@@ -49,9 +49,12 @@ export default function LoginPage() {
       toast({ title: "Sucesso!", description: "Login com Google realizado." });
     } catch (error: any) {
       console.error('Failed to sign in with Google', error);
-      const description = error.code === 'auth/operation-not-allowed'
-        ? "O login com Google não está habilitado. Verifique a configuração do Firebase."
-        : "Não foi possível fazer login com o Google. Tente novamente.";
+      let description = "Não foi possível fazer login com o Google. Tente novamente.";
+      if (error.code === 'auth/operation-not-allowed') {
+        description = "O login com Google não está habilitado. Verifique a configuração do Firebase.";
+      } else if (error.code === 'auth/api-key-not-valid') {
+        description = "A chave de API do Firebase é inválida. A configuração do projeto precisa ser concluída."
+      }
       toast({ variant: 'destructive', title: "Erro no Login", description });
     }
   };
@@ -62,9 +65,12 @@ export default function LoginPage() {
       toast({ title: "Sucesso!", description: "Login realizado." });
     } catch (error: any) {
       console.error("Failed to sign in with email", error);
-      const description = error.code === 'auth/invalid-credential'
-        ? "E-mail ou senha inválidos."
-        : "Ocorreu um erro ao tentar fazer login.";
+      let description = "Ocorreu um erro ao tentar fazer login.";
+       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        description = "E-mail ou senha inválidos.";
+      } else if (error.code === 'auth/api-key-not-valid') {
+        description = "A chave de API do Firebase é inválida. A configuração do projeto precisa ser concluída."
+      }
       toast({ variant: 'destructive', title: "Erro no Login", description });
     }
   };
@@ -75,11 +81,13 @@ export default function LoginPage() {
       toast({ title: "Conta Criada!", description: "Sua conta foi criada com sucesso. Você já está logado." });
     } catch (error: any) {
       console.error("Failed to sign up with email", error);
+      let description = "Não foi possível criar sua conta.";
        if (error.code === 'auth/email-already-in-use') {
-        toast({ variant: 'destructive', title: "Erro no Cadastro", description: "Este e-mail já está em uso." });
-      } else {
-        toast({ variant: 'destructive', title: "Erro no Cadastro", description: "Não foi possível criar sua conta." });
+        description = "Este e-mail já está em uso.";
+      } else if (error.code === 'auth/api-key-not-valid') {
+        description = "A chave de API do Firebase é inválida. A configuração do projeto precisa ser concluída."
       }
+      toast({ variant: 'destructive', title: "Erro no Cadastro", description });
     }
   };
   
