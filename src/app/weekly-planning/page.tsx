@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Plus, X, NotebookPen } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const categoryMapping: Record<string, TaskCategory> = {
   PES: 'PESSOAL',
@@ -27,14 +28,19 @@ export default function WeeklyPlanningPage() {
   const [weeklyPlan, setWeeklyPlan] = React.useState<WeeklyDay[]>([]);
   const [newTasks, setNewTasks] = React.useState<Record<string, string>>({});
   const [selectedCategories, setSelectedCategories] = React.useState<Record<string, TaskCategory>>({});
+  const [quickNotes, setQuickNotes] = React.useState("");
 
   React.useEffect(() => {
     try {
       const savedPlan = localStorage.getItem("weeklyPlan");
+      const savedNotes = localStorage.getItem("weeklyQuickNotes");
       if (savedPlan) {
         setWeeklyPlan(JSON.parse(savedPlan));
       } else {
         setWeeklyPlan(initialWeeklyPlan);
+      }
+      if (savedNotes) {
+        setQuickNotes(JSON.parse(savedNotes));
       }
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
@@ -47,6 +53,12 @@ export default function WeeklyPlanningPage() {
       localStorage.setItem("weeklyPlan", JSON.stringify(weeklyPlan));
     }
   }, [weeklyPlan]);
+
+  React.useEffect(() => {
+    if (quickNotes) {
+      localStorage.setItem("weeklyQuickNotes", JSON.stringify(quickNotes));
+    }
+  }, [quickNotes]);
 
   const handleNewTaskChange = (day: string, value: string) => {
     setNewTasks(prev => ({ ...prev, [day]: value }));
@@ -163,14 +175,19 @@ export default function WeeklyPlanningPage() {
           </Card>
         ))}
 
-        <Card className="bg-card-foreground/5 border-none flex flex-col items-center justify-center p-4">
-            <NotebookPen className="h-8 w-8 text-muted-foreground/50 mb-4" />
-            <h3 className="font-semibold text-sm text-muted-foreground mb-1">NOTAS RÁPIDAS</h3>
-            <p className="text-xs text-muted-foreground/80">Pensamentos soltos...</p>
+        <Card className="bg-card-foreground/5 border-none flex flex-col p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <NotebookPen className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold text-sm text-muted-foreground">NOTAS RÁPIDAS</h3>
+            </div>
+            <Textarea 
+              placeholder="Pensamentos soltos..."
+              className="bg-transparent border-none flex-grow resize-none text-sm focus-visible:ring-0 px-0"
+              value={quickNotes}
+              onChange={(e) => setQuickNotes(e.target.value)}
+            />
         </Card>
       </div>
     </div>
   );
 }
-
-    
