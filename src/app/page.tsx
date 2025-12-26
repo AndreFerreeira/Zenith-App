@@ -26,8 +26,6 @@ export default function Home() {
   const { data: weeklyPlan, isLoading: isWeeklyPlanLoading } = useWeeklyPlan(user?.uid);
   const { data: userDoc, isLoading: isUserDocLoading } = useUserDocument(user?.uid);
   
-  const isLoading = isAuthLoading || isGoalsLoading || isTransactionsLoading || isHabitsLoading || isWeeklyPlanLoading || isUserDocLoading;
-
   const activeGoals = React.useMemo(() => {
     if (!goals) return 0;
     return goals.filter(goal => !goal.completed).length;
@@ -57,59 +55,60 @@ export default function Home() {
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
-  
+
   const overviewCards = [
     {
       title: "METAS ATIVAS",
       value: activeGoals.toString(),
       icon: Target,
       href: "/annual-goals",
+      isLoading: isGoalsLoading,
     },
     {
       title: "SALDO ATUAL",
       value: formatCurrency(currentBalance),
       icon: Wallet,
       href: "/financial-management",
+      isLoading: isTransactionsLoading,
     },
     {
       title: "HÁBITOS HOJE",
       value: `${habitsToday.completed}/${habitsToday.total}`,
       icon: Check,
       href: "/habit-tracker",
+      isLoading: isHabitsLoading,
     },
     {
       title: "PRÓXIMO EVENTO",
       value: nextEvent,
       icon: Calendar,
       href: "/weekly-planning",
+      isLoading: isWeeklyPlanLoading,
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-8">
-        <Header />
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-12 w-3/4" />
-          <Skeleton className="h-6 w-1/2" />
+  if (isAuthLoading) {
+     return (
+        <div className="flex flex-col gap-8">
+            <Header />
+            <div className="flex flex-col gap-4">
+                <Skeleton className="h-12 w-3/4" />
+                <Skeleton className="h-6 w-1/2" />
+            </div>
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-32" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-9 w-32" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-40 rounded-lg" />)}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-64 rounded-lg lg:col-span-2" />
+                <Skeleton className="h-64 rounded-lg" />
+            </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-32" />
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-32" />
-        </div>
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Skeleton className="h-40 rounded-lg" />
-          <Skeleton className="h-40 rounded-lg" />
-          <Skeleton className="h-40 rounded-lg" />
-          <Skeleton className="h-40 rounded-lg" />
-        </div>
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-64 rounded-lg lg:col-span-2" />
-            <Skeleton className="h-64 rounded-lg" />
-         </div>
-      </div>
     );
   }
 
@@ -142,7 +141,7 @@ export default function Home() {
                 </div>
                 <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
               </div>
-              <p className="text-3xl font-bold">{card.value}</p>
+              {card.isLoading ? <Skeleton className="h-9 w-3/4 mt-1" /> : <p className="text-3xl font-bold">{card.value}</p>}
             </Card>
           </Link>
         ))}
@@ -158,14 +157,14 @@ export default function Home() {
               <ArrowUpRight className="h-5 w-5 text-muted-foreground transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <div className="flex items-center gap-4 mt-8">
-              {userDoc?.coreValues ? (
+              {isUserDocLoading ? <Skeleton className="h-6 w-full" /> : (userDoc?.coreValues ? (
                  <p className="text-muted-foreground italic">"{userDoc.coreValues}"</p>
               ) : (
                 <>
                   <CircleDashed className="h-10 w-10 text-muted-foreground/20" />
                   <p className="text-muted-foreground">Defina seus valores na aba Metas do Ano.</p>
                 </>
-              )}
+              ))}
             </div>
             <div className="grid grid-cols-2 gap-4 mt-8">
               <Button asChild variant="secondary" className="w-full"><Link href="/habit-tracker">VERIFICAR HÁBITOS</Link></Button>
@@ -190,3 +189,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
