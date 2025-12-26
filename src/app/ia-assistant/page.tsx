@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { BrainCircuit, Send, SparklesIcon, User, Plus } from "lucide-react";
+import { BrainCircuit, Send, SparklesIcon, User, Plus, Trash2 } from "lucide-react";
 import { getAiSuggestions } from '@/app/actions';
 import type { SuggestPersonalizedRoutinesInput, SuggestPersonalizedRoutinesOutput } from '@/ai/flows/suggest-personalized-routines';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -193,6 +193,12 @@ export default function IaAssistantPage() {
     }
   };
 
+  const handleClearHistory = () => {
+    setMessages([]);
+    localStorage.removeItem('aiAssistantMessages');
+    toast({ title: "Histórico limpo!", description: "Sua conversa com o assistente foi apagada." });
+  };
+
   const AssistantMessage = ({ content }: { content: SuggestPersonalizedRoutinesOutput }) => {
     const [editableGoals, setEditableGoals] = React.useState(content.suggestedGoals || []);
     const [editableHabits, setEditableHabits] = React.useState(content.suggestedHabits || []);
@@ -283,54 +289,67 @@ export default function IaAssistantPage() {
         </div>
 
         <TabsContent value="chat" className="flex-grow mt-6">
-            <Card className="flex-grow bg-card-foreground/5 border-none flex flex-col p-6 h-full">
-                <CardContent className="flex-grow flex flex-col gap-4 overflow-y-auto">
-                {messages.length === 0 && !isLoading && (
-                    <div className="flex-grow flex flex-col items-center justify-center text-center">
-                    <BrainCircuit className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                    <p className="text-muted-foreground tracking-widest text-sm">INICIE UMA NOVA ESTRATÉGIA</p>
-                    <p className='text-sm text-muted-foreground/50 mt-2'>Peça para o AI sugerir uma rotina baseada nos seus dados.</p>
-                    </div>
-                )}
+            <Card className="flex-grow bg-card-foreground/5 border-none flex flex-col h-full">
+                <div className="p-6 relative">
+                    {messages.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-4 right-4 h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={handleClearHistory}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Limpar histórico</span>
+                        </Button>
+                    )}
+                    <CardContent className="flex-grow flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-25rem)]">
+                    {messages.length === 0 && !isLoading && (
+                        <div className="flex-grow flex flex-col items-center justify-center text-center h-full">
+                        <BrainCircuit className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                        <p className="text-muted-foreground tracking-widest text-sm">INICIE UMA NOVA ESTRATÉGIA</p>
+                        <p className='text-sm text-muted-foreground/50 mt-2'>Peça para o AI sugerir uma rotina baseada nos seus dados.</p>
+                        </div>
+                    )}
 
-                {messages.map((message, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
-                        {message.role === 'assistant' && (
-                            <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                                <AvatarFallback><SparklesIcon className='w-5 h-5'/></AvatarFallback>
+                    {messages.map((message, index) => (
+                        <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                            {message.role === 'assistant' && (
+                                <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                                    <AvatarFallback><SparklesIcon className='w-5 h-5'/></AvatarFallback>
+                                </Avatar>
+                            )}
+                        <div className={`rounded-lg p-3 max-w-2xl w-full ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>
+                            {typeof message.content === 'string' ? (
+                            <p className="text-sm">{message.content}</p>
+                            ) : (
+                            <AssistantMessage content={message.content} />
+                            )}
+                        </div>
+                        {message.role === 'user' && (
+                                <Avatar className="h-8 w-8">
+                                    <AvatarFallback><User className='w-5 h-5'/></AvatarFallback>
+                                </Avatar>
+                            )}
+                        </div>
+                    ))}
+
+                    {isLoading && (
+                        <div className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                                <AvatarFallback><SparklesIcon className='w-5 h-5 animate-pulse'/></AvatarFallback>
                             </Avatar>
-                        )}
-                    <div className={`rounded-lg p-3 max-w-2xl w-full ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>
-                        {typeof message.content === 'string' ? (
-                          <p className="text-sm">{message.content}</p>
-                        ) : (
-                          <AssistantMessage content={message.content} />
-                        )}
-                    </div>
-                    {message.role === 'user' && (
-                            <Avatar className="h-8 w-8">
-                                <AvatarFallback><User className='w-5 h-5'/></AvatarFallback>
-                            </Avatar>
-                        )}
-                    </div>
-                ))}
+                        <div className="rounded-lg p-3 max-w-lg bg-card animate-pulse w-full">
+                            <div className="h-4 bg-muted-foreground/20 rounded w-48 mb-4"></div>
+                            <div className="h-4 bg-muted-foreground/20 rounded w-full mb-2"></div>
+                            <div className="h-4 bg-muted-foreground/20 rounded w-3/4"></div>
+                        </div>
+                        </div>
+                    )}
 
-                {isLoading && (
-                    <div className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                            <AvatarFallback><SparklesIcon className='w-5 h-5 animate-pulse'/></AvatarFallback>
-                        </Avatar>
-                    <div className="rounded-lg p-3 max-w-lg bg-card animate-pulse w-full">
-                        <div className="h-4 bg-muted-foreground/20 rounded w-48 mb-4"></div>
-                        <div className="h-4 bg-muted-foreground/20 rounded w-full mb-2"></div>
-                        <div className="h-4 bg-muted-foreground/20 rounded w-3/4"></div>
-                    </div>
-                    </div>
-                )}
-
-                </CardContent>
+                    </CardContent>
+                </div>
                 
-                <div className="mt-auto pt-4">
+                <div className="mt-auto p-6 pt-4">
                 <div className="relative">
                     <Input 
                     placeholder="Peça auxílio estratégico ou análise de dados..." 
@@ -367,3 +386,5 @@ export default function IaAssistantPage() {
     </div>
   );
 }
+
+    
