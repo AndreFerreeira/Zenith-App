@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -33,45 +34,12 @@ export function useDoc<T>(
       return;
     }
 
-    let unsubscribe: () => void;
-    try {
-        const docRef = typeof pathOrRef === "string"
-            ? doc(firestore, pathOrRef) as DocumentReference<T>
-            : pathOrRef;
-
-        if (options.listen) {
-            unsubscribe = onSnapshot(docRef, (doc) => {
-                if (doc.exists()) {
-                    setData({ ...doc.data(), id: doc.id } as T);
-                } else {
-                    setData(null);
-                }
-                setIsLoading(false);
-            }, (error) => {
-                console.error("Error in useDoc listener:", error);
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'get',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setIsLoading(false);
-                setData(null);
-            });
-        } else {
-            // Not implemented: one-time fetch
-            setIsLoading(false);
-        }
-    } catch(error) {
-        console.error("Error setting up useDoc:", error);
-        setIsLoading(false);
-        setData(null);
-    }
-
-    return () => {
-        if (unsubscribe) {
-            unsubscribe();
-        }
-    };
+    // Since we removed authentication, we can't listen to user-specific documents.
+    // This hook will now only work for public documents or not at all.
+    // For now, we'll just return null.
+    setData(null);
+    setIsLoading(false);
+    
   }, [pathOrRef, options.listen]);
 
   return { data, isLoading };

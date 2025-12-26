@@ -10,18 +10,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { User, Briefcase, Box, Plus, Target, Heart, Trash2 } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { useUser, useCollection, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import type { AnnualGoal, UserDocument } from '@/firebase/firestore/data';
-import { addAnnualGoal, deleteAnnualGoal, updateAnnualGoal, updateUserDocument } from '@/firebase/firestore/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { firestore } from '@/firebase';
 
 type Goal = {
   id: string;
   text: string;
   completed: boolean;
-  category: "Pessoais" | "Profissionais" | "Materiais";
 };
 
 type GoalSection = {
@@ -30,15 +24,14 @@ type GoalSection = {
   goals: Goal[];
 };
 
+const initialGoalSections: Omit<GoalSection, 'icon'>[] = [
+  { title: "Pessoais", goals: [{id: 'g1', text: 'Correr uma meia maratona', completed: false}] },
+  { title: "Profissionais", goals: [{id: 'g2', text: 'Aprender uma nova linguagem', completed: false}] },
+  { title: "Materiais", goals: [{id: 'g3', text: 'Comprar um novo monitor', completed: false}] },
+];
+
 export default function AnnualGoalsPage() {
-  const { user, isLoading: isUserLoading } = useUser();
-  
-  const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
-  const { data: userDoc, isLoading: isUserDocLoading } = useDoc<UserDocument>(userDocRef);
-
-  const goalsCollectionRef = user ? collection(firestore, 'users', user.uid, 'annualGoals') : null;
-  const { data: annualGoals, isLoading: areGoalsLoading } = useCollection<AnnualGoal>(goalsCollectionRef);
-
+  const [goalSections, setGoalSections] = React.useState<Omit<GoalSection, 'icon'>[]>([]);
   const [newGoals, setNewGoals] = React.useState<Record<string, string>>({
     Pessoais: "",
     Profissionais: "",
@@ -47,37 +40,50 @@ export default function AnnualGoalsPage() {
   
   const [dreamRoutine, setDreamRoutine] = React.useState("");
   const [coreValues, setCoreValues] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (userDoc) {
-      setDreamRoutine(userDoc.dreamRoutine || "");
-      setCoreValues(userDoc.coreValues || "");
+    try {
+      const savedGoals = localStorage.getItem("annualGoals");
+      const savedRoutine = localStorage.getItem("dreamRoutine");
+      const savedValues = localStorage.getItem("coreValues");
+      
+      if (savedGoals) {
+        setGoalSections(JSON.parse(savedGoals));
+      } else {
+        setGoalSections(initialGoalSections);
+      }
+      if (savedRoutine) {
+        setDreamRoutine(JSON.parse(savedRoutine));
+      }
+       if (savedValues) {
+        setCoreValues(JSON.parse(savedValues));
+      }
+    } catch (error) {
+      console.error("Failed to parse from localStorage", error);
+      setGoalSections(initialGoalSections);
     }
-  }, [userDoc]);
+    setIsLoading(false);
+  }, []);
 
-  const handleUpdateUserDoc = (field: 'dreamRoutine' | 'coreValues', value: string) => {
-    if (user) {
-        updateUserDocument(firestore, user.uid, { [field]: value });
+  React.useEffect(() => {
+    if(!isLoading) {
+      localStorage.setItem("annualGoals", JSON.stringify(goalSections));
     }
-  };
+  }, [goalSections, isLoading]);
 
-  const goalSections: GoalSection[] = React.useMemo(() => {
-    const sections: GoalSection[] = [
-      { title: "Pessoais", icon: User, goals: [] },
-      { title: "Profissionais", icon: Briefcase, goals: [] },
-      { title: "Materiais", icon: Box, goals: [] },
-    ];
-
-    if (annualGoals) {
-      annualGoals.forEach(goal => {
-        const section = sections.find(s => s.title === goal.category);
-        if (section) {
-          section.goals.push(goal as Goal);
-        }
-      });
+  React.useEffect(() => {
+    if(!isLoading) {
+      localStorage.setItem("dreamRoutine", JSON.stringify(dreamRoutine));
     }
-    return sections;
-  }, [annualGoals]);
+  }, [dreamRoutine, isLoading]);
+
+  React.useEffect(() => {
+    if(!isLoading) {
+      localStorage.setItem("coreValues", JSON.stringify(coreValues));
+    }
+  }, [coreValues, isLoading]);
+
 
   const handleNewGoalChange = (sectionTitle: string, value: string) => {
     setNewGoals(prev => ({ ...prev, [sectionTitle]: value }));
@@ -85,29 +91,55 @@ export default function AnnualGoalsPage() {
 
   const handleAddGoal = (sectionTitle: GoalSection['title']) => {
     const goalText = newGoals[sectionTitle];
-    if (!goalText || goalText.trim() === "" || !user) return;
-
-    const newGoal: Omit<AnnualGoal, 'id'> = {
+    if (!goalText || goalText.trim() === "") return;
+    
+    const newGoal = {
+      id: Math.random().toString(),
       text: goalText.trim(),
       completed: false,
-      category: sectionTitle
     };
-
-    addAnnualGoal(firestore, user.uid, newGoal);
+    
+    setGoalSections(prevSections =>
+      prevSections.map(section =>
+        section.title === sectionTitle
+          ? { ...section, goals: [...section.goals, newGoal] }
+          : section
+      )
+    );
+    
     handleNewGoalChange(sectionTitle, "");
   };
 
-  const handleToggleGoal = (goalId: string, completed: boolean) => {
-    if (!user) return;
-    updateAnnualGoal(firestore, user.uid, goalId, { completed });
+  const handleToggleGoal = (sectionTitle: GoalSection['title'], goalId: string) => {
+    setGoalSections(prevSections =>
+      prevSections.map(section =>
+        section.title === sectionTitle
+          ? {
+              ...section,
+              goals: section.goals.map(goal =>
+                goal.id === goalId ? { ...goal, completed: !goal.completed } : goal
+              ),
+            }
+          : section
+      )
+    );
   };
   
-  const handleRemoveGoal = (goalId: string) => {
-    if (!user) return;
-    deleteAnnualGoal(firestore, user.uid, goalId);
+  const handleRemoveGoal = (sectionTitle: GoalSection['title'], goalId: string) => {
+     setGoalSections(prevSections =>
+      prevSections.map(section =>
+        section.title === sectionTitle
+          ? { ...section, goals: section.goals.filter(goal => goal.id !== goalId) }
+          : section
+      )
+    );
   };
   
-  const isLoading = isUserLoading || areGoalsLoading || isUserDocLoading;
+  const sectionsWithIcons: GoalSection[] = [
+    { title: "Pessoais", icon: User, goals: goalSections.find(s => s.title === "Pessoais")?.goals || [] },
+    { title: "Profissionais", icon: Briefcase, goals: goalSections.find(s => s.title === "Profissionais")?.goals || [] },
+    { title: "Materiais", icon: Box, goals: goalSections.find(s => s.title === "Materiais")?.goals || [] },
+  ];
 
   if (isLoading) {
     return (
@@ -143,7 +175,7 @@ export default function AnnualGoalsPage() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {goalSections.map((section) => (
+        {sectionsWithIcons.map((section) => (
           <Card key={section.title} className="bg-card-foreground/5 border-none flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -155,7 +187,7 @@ export default function AnnualGoalsPage() {
               <div className="flex-grow space-y-3">
                 {section.goals.map((goal) => (
                   <div key={goal.id} className="flex items-center gap-3 group">
-                    <Checkbox id={goal.id} className="w-5 h-5 rounded-full" checked={goal.completed} onCheckedChange={(checked) => handleToggleGoal(goal.id, !!checked)} />
+                    <Checkbox id={goal.id} className="w-5 h-5 rounded-full" checked={goal.completed} onCheckedChange={() => handleToggleGoal(section.title, goal.id)} />
                     <label 
                       htmlFor={goal.id} 
                       className={cn(
@@ -165,7 +197,7 @@ export default function AnnualGoalsPage() {
                     >
                       {goal.text}
                     </label>
-                     <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveGoal(goal.id)}>
+                     <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveGoal(section.title, goal.id)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -202,7 +234,6 @@ export default function AnnualGoalsPage() {
                   className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0 px-0" 
                   value={dreamRoutine}
                   onChange={(e) => setDreamRoutine(e.target.value)}
-                  onBlur={(e) => handleUpdateUserDoc('dreamRoutine', e.target.value)}
                 />
             </CardContent>
           </Card>
@@ -219,7 +250,6 @@ export default function AnnualGoalsPage() {
                   className="bg-transparent border-none h-full resize-none text-base focus-visible:ring-0 px-0" 
                   value={coreValues}
                   onChange={(e) => setCoreValues(e.target.value)}
-                  onBlur={(e) => handleUpdateUserDoc('coreValues', e.target.value)}
                  />
             </CardContent>          
           </Card>

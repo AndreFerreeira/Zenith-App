@@ -8,8 +8,6 @@ import { Card } from "@/components/ui/card";
 import { ArrowUpRight, Check, SlidersHorizontal, Target, Wallet, Calendar, Sparkles, Heart, CircleDashed } from "lucide-react";
 import Link from "next/link";
 import type { Transaction, MonthlyHabit, Goal, WeeklyDay } from '@/lib/data';
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type AnnualGoalSection = {
@@ -19,20 +17,13 @@ type AnnualGoalSection = {
 
 
 export default function Home() {
-  const { user, isLoading } = useUser();
-  const router = useRouter();
-
   const [activeGoals, setActiveGoals] = React.useState(0);
   const [currentBalance, setCurrentBalance] = React.useState(0);
   const [habitsToday, setHabitsToday] = React.useState({ completed: 0, total: 0 });
   const [nextEvent, setNextEvent] = React.useState("Livre");
   const [coreValues, setCoreValues] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
-  }, [isLoading, user, router]);
 
   React.useEffect(() => {
     // This function will run on the client, so window is available.
@@ -97,11 +88,10 @@ export default function Home() {
             }
         }
       } catch (e) { console.error("Failed to parse core values", e)}
+      setIsLoading(false);
     };
 
-    if (user) {
-      calculateOverview();
-    }
+    calculateOverview();
     
     // Optional: Re-calculate when storage changes (e.g., in another tab)
     window.addEventListener('storage', calculateOverview);
@@ -110,7 +100,7 @@ export default function Home() {
       window.removeEventListener('storage', calculateOverview);
     }
 
-  }, [user]);
+  }, []);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -143,7 +133,7 @@ export default function Home() {
     },
   ];
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-8">
         <Header />

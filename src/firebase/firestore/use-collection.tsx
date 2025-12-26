@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -44,53 +45,12 @@ export function useCollection<T>(
       return;
     }
     
-    let unsubscribe: () => void;
-
-    try {
-      let queryToWatch: Query<T> | CollectionReference<T>;
-
-      if (typeof pathOrQueryOrRef === "string") {
-        queryToWatch = collection(firestore, pathOrQueryOrRef) as CollectionReference<T>;
-      } else {
-        queryToWatch = pathOrQueryOrRef;
-      }
-
-      if (options.listen) {
-        unsubscribe = onSnapshot(
-          queryToWatch,
-          (snapshot) => {
-            const data = snapshot.docs.map(
-              (doc) => ({ ...doc.data(), id: doc.id } as T)
-            );
-            setData(data);
-            setIsLoading(false);
-          },
-          (error) => {
-            console.error("Error in useCollection listener:", error);
-            const permissionError = new FirestorePermissionError({
-                path: 'path' in queryToWatch ? queryToWatch.path : 'unknown',
-                operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            setIsLoading(false);
-            setData(null);
-          }
-        );
-      } else {
-        // Not implemented: one-time fetch
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("Error setting up useCollection:", error);
-      setIsLoading(false);
-      setData(null);
-    }
+    // Since we removed authentication, we can't listen to user-specific collections.
+    // This hook will now only work for public collections or not at all.
+    // For now, we'll just return an empty array.
+    setData([]);
+    setIsLoading(false);
     
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
   }, [pathOrQueryOrRef, options.listen]);
 
   return { data, isLoading };
