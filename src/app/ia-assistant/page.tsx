@@ -67,6 +67,7 @@ export default function IaAssistantPage() {
     if (messages.length > 0) {
       localStorage.setItem('aiAssistantMessages', JSON.stringify(messages));
     } else {
+      // Clear from storage if messages array is empty
       localStorage.removeItem('aiAssistantMessages');
     }
   }, [messages]);
@@ -196,7 +197,6 @@ export default function IaAssistantPage() {
 
   const handleClearHistory = () => {
     setMessages([]);
-    localStorage.removeItem('aiAssistantMessages');
     toast({ title: "Histórico limpo!", description: "Sua conversa com o assistente foi apagada." });
   };
 
@@ -291,7 +291,7 @@ export default function IaAssistantPage() {
 
         <TabsContent value="chat" className="flex-grow mt-6">
             <Card className="flex-grow bg-card-foreground/5 border-none flex flex-col h-full">
-                <div className="p-6 relative">
+                <div className="p-6 relative flex-grow flex flex-col">
                     {messages.length > 0 && (
                         <Button
                             variant="ghost"
@@ -303,7 +303,7 @@ export default function IaAssistantPage() {
                             <span className="sr-only">Limpar histórico</span>
                         </Button>
                     )}
-                    <CardContent className="flex-grow flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-25rem)]">
+                    <CardContent className="flex-grow flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-28rem)]">
                     {messages.length === 0 && !isLoading && (
                         <div className="flex-grow flex flex-col items-center justify-center text-center h-full">
                         <BrainCircuit className="h-16 w-16 text-muted-foreground/30 mb-4" />
@@ -346,24 +346,23 @@ export default function IaAssistantPage() {
                         </div>
                         </div>
                     )}
-
                     </CardContent>
-                </div>
                 
-                <div className="mt-auto p-6 pt-4">
-                <div className="relative">
-                    <Input 
-                    placeholder="Peça auxílio estratégico ou análise de dados..." 
-                    className="bg-card border-none rounded-full h-14 pl-6 pr-16 text-base"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    disabled={isLoading}
-                    />
-                    <Button size="icon" className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-primary text-primary-foreground" onClick={handleSendMessage} disabled={isLoading}>
-                    <Send className="h-5 w-5" />
-                    </Button>
-                </div>
+                    <div className="mt-auto pt-4">
+                        <div className="relative">
+                            <Input 
+                            placeholder="Peça auxílio estratégico ou análise de dados..." 
+                            className="bg-card border-none rounded-full h-14 pl-6 pr-16 text-base"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            disabled={isLoading}
+                            />
+                            <Button size="icon" className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-primary text-primary-foreground" onClick={handleSendMessage} disabled={isLoading}>
+                            <Send className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </Card>
         </TabsContent>
