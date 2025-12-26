@@ -56,14 +56,17 @@ const HabitsTodayCard = () => {
 const NextEventCard = () => {
   const { user } = useAuth();
   const today = new Date();
-  const dayOfWeek = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][today.getDay()];
+  // Corrected day names to match Firestore data
+  const dayOfWeekNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+  const dayOfWeek = dayOfWeekNames[today.getDay()];
   const { data: weeklyPlan, isLoading } = useWeeklyPlan(user?.uid);
+
   const value = React.useMemo(() => {
     if (!weeklyPlan) return "Livre";
-    const dayOrder = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-    const sortedPlan = [...weeklyPlan].sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
-    const todayPlan = sortedPlan.find(d => d.day === dayOfWeek);
+
+    const todayPlan = weeklyPlan.find(d => d.day === dayOfWeek);
     return todayPlan?.tasks[0]?.name || "Livre";
+    
   }, [weeklyPlan, dayOfWeek]);
   
   return <OverviewCard title="PRÓXIMO EVENTO" value={value} icon={Calendar} href="/weekly-planning" isLoading={isLoading} />;
