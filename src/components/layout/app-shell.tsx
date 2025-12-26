@@ -2,25 +2,35 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { FloatingNav } from '@/components/layout/floating-nav';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/firebase/auth/provider';
+import { ZenithMasteryLogo } from '../icons';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, isLoading } = useAuth();
   const isAuthPage = pathname.startsWith('/login');
-  const { isLoading } = useAuth();
-  
+
+  React.useEffect(() => {
+    if (!isLoading && !user && !isAuthPage) {
+      redirect('/login');
+    }
+  }, [user, isLoading, isAuthPage]);
+
+
   if (isAuthPage) {
     return <>{children}</>;
   }
 
-  if (isLoading) {
+  if (isLoading || !user) {
      return (
-        <div className="flex items-center justify-center h-screen w-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+        <div className="flex items-center justify-center h-screen w-screen bg-background">
+          <div className='flex flex-col items-center gap-4'>
+            <ZenithMasteryLogo className="h-16 w-16 text-primary animate-pulse" />
+            <p className='text-muted-foreground text-sm'>Carregando seu plano de mestre...</p>
+          </div>
         </div>
      );
   }
