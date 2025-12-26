@@ -11,6 +11,7 @@ import {
   where,
   getDocs,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { useCollection } from './use-collection';
@@ -108,14 +109,9 @@ export const useWeeklyPlan = (userId?: string) => {
 };
 
 export const useMonthlyStrategy = (userId?: string, month?: string) => {
-    const collectionRef = userId ? collection(firestore, `users/${userId}/monthlyStrategies`) : null;
-    const q = collectionRef && month ? query(collectionRef, where('month', '==', month)) : null;
-    const { data, isLoading } = useCollection<MonthlyStrategy>(q, { listen: true });
-    
-    // Since we expect only one doc, we extract it.
-    const strategyDoc = data && data.length > 0 ? data[0] : null;
-
-    return { data: strategyDoc, isLoading };
+    const path = userId && month ? `users/${userId}/monthlyStrategies/${month}` : null;
+    const { data, isLoading } = useDoc<MonthlyStrategy>(path, { listen: true });
+    return { data, isLoading };
 };
 
 export const useAiMessages = (userId?: string) => {
@@ -194,19 +190,10 @@ export const updateWeeklyPlan = async (userId: string, dayId: string, data: Part
 
 
 // Monthly Strategy
-export const updateMonthlyStrategy = async (userId: string, month: string, data: Partial<MonthlyStrategy>) => {
-    const strategyCollectionRef = collection(firestore, 'users', userId, 'monthlyStrategies');
-    const q = query(strategyCollectionRef, where('month', '==', month));
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-        // Create new document if it doesn't exist
-        return addDoc(strategyCollectionRef, { month, ...data });
-    } else {
-        // Update existing document
-        const docToUpdate = snapshot.docs[0].ref;
-        return updateDoc(docToUpdate, data);
-    }
+export const updateMonthlyStrategy = async (userId: string, month: string, data: Partial<Omit<MonthlyStrategy, 'id' | 'month'>>) => {
+    const strategyDocRef = doc(firestore, 'users', userId, 'monthlyStrategies', month);
+    // Use setDoc with merge to create or update the document atomically.
+    return setDoc(strategyDocRef, { ...data, month }, { merge: true });
 };
 
 // AI Assistant
