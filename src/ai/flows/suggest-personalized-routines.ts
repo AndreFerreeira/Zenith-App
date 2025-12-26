@@ -14,6 +14,7 @@ import {z} from 'genkit';
 
 // Define the input schema
 const SuggestPersonalizedRoutinesInputSchema = z.object({
+  theme: z.string().describe('The main theme or topic for the routine.'),
   habits: z.array(z.string()).describe('A list of tracked habits.'),
   goals: z.array(z.string()).describe('A list of user goals.'),
   financialData: z.string().describe('A summary of the user financial data.'),
@@ -44,6 +45,8 @@ const suggestPersonalizedRoutinesPrompt = ai.definePrompt({
   output: {schema: SuggestPersonalizedRoutinesOutputSchema},
   prompt: `Você é um coach de vida e produtividade especialista e extremamente detalhista. Sua tarefa é responder em português do Brasil.
 Analise os dados do usuário a seguir para sugerir rotinas diárias e semanais personalizadas e estruturadas, juntamente com hábitos e metas específicos e acionáveis.
+
+O foco principal do plano deve ser o seguinte tema: "{{theme}}".
 
 As rotinas devem estar alinhadas com os valores essenciais do usuário, seus objetivos de longo prazo e sua rotina dos sonhos.
 Use seus hábitos atuais e dados financeiros como base para o que é alcançável.

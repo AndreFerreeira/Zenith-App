@@ -71,7 +71,7 @@ export default function IaAssistantPage() {
   }, [messages]);
 
 
-  const getContextData = (): SuggestPersonalizedRoutinesInput => {
+  const getContextData = (theme: string): SuggestPersonalizedRoutinesInput => {
     let habits: string[] = [];
     let goals: string[] = [];
     let financialData = "Nenhum dado financeiro.";
@@ -115,7 +115,7 @@ export default function IaAssistantPage() {
       console.error("Failed to read data from localStorage for AI assistant", e);
     }
     
-    return { habits, goals, financialData, dreamRoutine, coreValues };
+    return { theme, habits, goals, financialData, dreamRoutine, coreValues };
   };
 
   const handleSendMessage = async () => {
@@ -123,10 +123,11 @@ export default function IaAssistantPage() {
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
-    const contextData = getContextData();
+    const contextData = getContextData(currentInput);
     const result = await getAiSuggestions(contextData);
     
     if (result.success && result.data) {
@@ -366,5 +367,3 @@ export default function IaAssistantPage() {
     </div>
   );
 }
-
-    
