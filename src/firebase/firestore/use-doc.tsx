@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { onSnapshot, doc, type DocumentReference, type DocumentData } from "firebase/firestore";
+import { onSnapshot, doc, type DocumentReference, type DocumentData, getDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { errorEmitter } from "../error-emitter";
 import { FirestorePermissionError } from "../errors";
@@ -50,8 +50,23 @@ export function useDoc<T extends DocumentData>(
       );
       return () => unsubscribe();
     } else {
-      // getDoc logic if needed
-      setIsLoading(false);
+      getDoc(docRef).then(docSnap => {
+        if (docSnap.exists()) {
+          setData({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          setData(null);
+        }
+        setIsLoading(false);
+      }).catch(error => {
+        console.error(`Error getting doc:`, error);
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: docRef.path,
+              operation: 'get'
+          }));
+        }
+        setIsLoading(false);
+      });
     }
   }, [pathOrRef, options.listen]);
 

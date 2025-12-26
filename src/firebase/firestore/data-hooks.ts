@@ -78,28 +78,28 @@ export type UserDocument = {
 
 export const useUserDocument = (userId?: string) => {
   const path = userId ? `users/${userId}` : null;
-  return useDoc<UserDocument>(path);
+  return useDoc<UserDocument>(path, { listen: true });
 };
 
 export const useAnnualGoals = (userId?: string) => {
   const path = userId ? `users/${userId}/annualGoals` : null;
-  return useCollection<AnnualGoal>(path);
+  return useCollection<AnnualGoal>(path, { listen: true });
 };
 
 export const useHabits = (userId?: string, month?: string) => {
   const collectionRef = userId ? collection(firestore, `users/${userId}/habits`) : null;
   const q = collectionRef && month ? query(collectionRef, where('month', '==', month)) : collectionRef;
-  return useCollection<Habit>(q);
+  return useCollection<Habit>(q, { listen: true });
 };
 
 export const useTransactions = (userId?: string) => {
   const path = userId ? `users/${userId}/transactions` : null;
-  return useCollection<Transaction>(path);
+  return useCollection<Transaction>(path, { listen: true });
 };
 
 export const useWishlist = (userId?: string) => {
   const path = userId ? `users/${userId}/wishlist` : null;
-  return useCollection<WishlistItem>(path);
+  return useCollection<WishlistItem>(path, { listen: true });
 };
 
 export const useWeeklyPlan = (userId?: string) => {
@@ -110,7 +110,7 @@ export const useWeeklyPlan = (userId?: string) => {
 export const useMonthlyStrategy = (userId?: string, month?: string) => {
     const collectionRef = userId ? collection(firestore, `users/${userId}/monthlyStrategies`) : null;
     const q = collectionRef && month ? query(collectionRef, where('month', '==', month)) : null;
-    const { data, isLoading } = useCollection<MonthlyStrategy>(q);
+    const { data, isLoading } = useCollection<MonthlyStrategy>(q, { listen: true });
     
     // Since we expect only one doc, we extract it.
     const strategyDoc = data && data.length > 0 ? data[0] : null;
