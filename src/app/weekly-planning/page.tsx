@@ -20,6 +20,8 @@ const categoryButtons: { label: 'PES' | 'PRO' | 'MAT', category: TaskCategory }[
     { label: 'MAT', category: 'MATERIAL' },
 ];
 
+const noteBlockDays = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
+
 export default function WeeklyPlanningPage() {
   const { user } = useAuth();
   const { data: weeklyPlanData, isLoading: isPlanLoading } = useWeeklyPlan(user?.uid);
@@ -222,7 +224,7 @@ export default function WeeklyPlanningPage() {
                 <div className="flex flex-col flex-grow text-center">
                     <div className="flex-grow flex flex-col items-center justify-center">
                         <NotebookPen className="h-8 w-8 text-muted-foreground/30 mb-4" />
-                        <h3 className="font-semibold text-sm text-muted-foreground mb-2">BLOCO DE NOTAS</h3>
+                        <h3 className="font-semibold text-sm text-muted-foreground mb-2">{noteBlockDays[index].toUpperCase()}</h3>
                     </div>
                     <Textarea
                         placeholder="Digite aqui..."
