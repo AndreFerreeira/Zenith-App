@@ -67,6 +67,9 @@ export default function IaAssistantPage() {
   React.useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem('aiAssistantMessages', JSON.stringify(messages));
+    } else {
+      // If messages are cleared, remove from storage
+      localStorage.removeItem('aiAssistantMessages');
     }
   }, [messages]);
 
@@ -386,5 +389,3 @@ export default function IaAssistantPage() {
     </div>
   );
 }
-
-    
