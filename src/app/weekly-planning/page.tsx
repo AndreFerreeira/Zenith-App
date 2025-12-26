@@ -29,6 +29,10 @@ export default function WeeklyPlanningPage() {
   const [newTasks, setNewTasks] = React.useState<Record<string, string>>({});
   const [selectedCategories, setSelectedCategories] = React.useState<Record<string, TaskCategory>>({});
   const [quickNotes, setQuickNotes] = React.useState("");
+  const [weeklyNotesBlocks, setWeeklyNotesBlocks] = React.useState<string[]>([]);
+  
+  const weeklyPlanJson = JSON.stringify(weeklyPlanData);
+  const userDocJson = JSON.stringify(userDoc);
 
   React.useEffect(() => {
     if (weeklyPlanData) {
@@ -36,10 +40,14 @@ export default function WeeklyPlanningPage() {
       const sortedPlan = [...weeklyPlanData].sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
       setWeeklyPlan(sortedPlan);
     }
-    if (userDoc?.quickNotes) {
-      setQuickNotes(userDoc.quickNotes);
+  }, [weeklyPlanJson]);
+
+  React.useEffect(() => {
+    if (userDoc) {
+      setQuickNotes(userDoc.quickNotes || "");
+      setWeeklyNotesBlocks(userDoc.weeklyNotesBlocks || Array(7).fill(""));
     }
-  }, [weeklyPlanData, userDoc?.quickNotes]);
+  }, [userDocJson]);
 
   const handleUpdatePlan = (dayId: string, newTasks: WeeklyTask[]) => {
     if (user?.uid) {
@@ -50,6 +58,18 @@ export default function WeeklyPlanningPage() {
   const handleNotesBlur = () => {
     if (user?.uid && userDoc?.quickNotes !== quickNotes) {
       updateUserDocument(user.uid, { quickNotes: quickNotes });
+    }
+  };
+
+  const handleWeeklyNoteChange = (index: number, value: string) => {
+    const newNotes = [...weeklyNotesBlocks];
+    newNotes[index] = value;
+    setWeeklyNotesBlocks(newNotes);
+  };
+
+  const handleWeeklyNoteBlur = (index: number) => {
+    if (user?.uid && userDoc?.weeklyNotesBlocks?.[index] !== weeklyNotesBlocks[index]) {
+       updateUserDocument(user.uid, { weeklyNotesBlocks: weeklyNotesBlocks });
     }
   };
 
@@ -196,6 +216,25 @@ export default function WeeklyPlanningPage() {
                 />
             </div>
         </Card>
+
+        {weeklyNotesBlocks.map((note, index) => (
+            <Card key={`note-block-${index}`} className="bg-card-foreground/5 border-none flex flex-col p-4 min-h-[320px]">
+                <div className="flex flex-col flex-grow text-center">
+                    <div className="flex-grow flex flex-col items-center justify-center">
+                        <NotebookPen className="h-8 w-8 text-muted-foreground/30 mb-4" />
+                        <h3 className="font-semibold text-sm text-muted-foreground mb-2">BLOCO DE NOTAS</h3>
+                    </div>
+                    <Textarea
+                        placeholder="Digite aqui..."
+                        className="bg-transparent border-none flex-grow resize-none text-sm focus-visible:ring-0 px-0 text-center"
+                        value={note}
+                        onChange={(e) => handleWeeklyNoteChange(index, e.target.value)}
+                        onBlur={() => handleWeeklyNoteBlur(index)}
+                    />
+                </div>
+            </Card>
+        ))}
+        
       </div>
     </div>
   );

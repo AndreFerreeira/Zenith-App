@@ -76,6 +76,7 @@ export type UserDocument = {
   financialGoal?: number;
   aiNotes?: string;
   quickNotes?: string;
+  weeklyNotesBlocks?: string[];
   aiMessages?: any[];
 };
 
@@ -287,19 +288,29 @@ export const updateMonthlyStrategy = async (userId: string, month: string, data:
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-            return await addDoc(strategyCollectionRef, { month, ...data });
+            return await addDoc(strategyCollectionRef, { month, ...data }).catch(async (serverError) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: strategyCollectionRef.path,
+                    operation: 'create',
+                    requestResourceData: { month, ...data }
+                }));
+            });
         } else {
             const docToUpdate = snapshot.docs[0].ref;
-            return await updateDoc(docToUpdate, data);
+            return await updateDoc(docToUpdate, data).catch(async (serverError) => {
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: docToUpdate.path,
+                    operation: 'update',
+                    requestResourceData: data
+                }));
+            });
         }
     } catch (serverError: any) {
+        // This outer catch is primarily for permission errors on the initial 'getDocs' query
         if (serverError.code === 'permission-denied') {
-            const operation = snapshot.empty ? 'create' : 'update';
-            const path = snapshot.empty ? strategyCollectionRef.path : snapshot.docs[0].ref.path;
              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: path,
-                operation: operation,
-                requestResourceData: data
+                path: strategyCollectionRef.path,
+                operation: 'list', // The failing operation was the query
             }));
         }
         // Re-throw other errors

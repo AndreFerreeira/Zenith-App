@@ -34,6 +34,7 @@ export async function createInitialUserData(userId: string, email: string | null
             financialGoal: 0,
             aiNotes: "",
             quickNotes: "",
+            weeklyNotesBlocks: Array(7).fill(""),
             aiMessages: [],
         });
 
