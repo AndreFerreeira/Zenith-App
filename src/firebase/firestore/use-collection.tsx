@@ -9,7 +9,7 @@ import {
   type CollectionReference,
   type Query,
 } from "firebase/firestore";
-import { useFirestore } from "../provider";
+import { firestore } from "@/firebase";
 import { errorEmitter } from "../error-emitter";
 import { FirestorePermissionError } from "../errors";
 
@@ -34,7 +34,6 @@ export function useCollection<T>(
   pathOrQueryOrRef: string | Query<T> | CollectionReference<T> | null | undefined,
   options: UseCollectionOptions = { listen: true }
 ): { data: T[] | null; isLoading: boolean } {
-  const firestore = useFirestore();
   const [data, setData] = useState<T[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

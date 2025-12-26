@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Sidebar } from '@/components/layout/sidebar';
 import { FloatingNav } from '@/components/layout/floating-nav';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'Zenith Mastery',
@@ -25,7 +25,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background">
-        <FirebaseClientProvider>
           <div className="flex">
             <div className='hidden md:block'>
               <Sidebar />
@@ -38,7 +37,7 @@ export default function RootLayout({
             <FloatingNav />
           </div>
           <Toaster />
-        </FirebaseClientProvider>
+          <FirebaseErrorListener />
       </body>
     </html>
   );

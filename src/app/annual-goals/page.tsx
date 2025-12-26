@@ -10,11 +10,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { User, Briefcase, Box, Plus, Target, Heart, Trash2 } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { useUser, useCollection, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import type { AnnualGoal, UserDocument } from '@/firebase/firestore/data';
 import { addAnnualGoal, deleteAnnualGoal, updateAnnualGoal, updateUserDocument } from '@/firebase/firestore/data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { firestore } from '@/firebase';
 
 type Goal = {
   id: string;
@@ -31,7 +32,6 @@ type GoalSection = {
 
 export default function AnnualGoalsPage() {
   const { user, isLoading: isUserLoading } = useUser();
-  const firestore = useFirestore();
   
   const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
   const { data: userDoc, isLoading: isUserDocLoading } = useDoc<UserDocument>(userDocRef);

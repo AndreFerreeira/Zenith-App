@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { onSnapshot, doc, type DocumentReference } from "firebase/firestore";
-import { useFirestore } from "../provider";
+import { firestore } from "@/firebase";
 import { errorEmitter } from "../error-emitter";
 import { FirestorePermissionError } from "../errors";
 
@@ -23,7 +23,6 @@ export function useDoc<T>(
   pathOrRef: string | DocumentReference<T> | null | undefined,
   options: UseDocOptions = { listen: true }
 ): { data: T | null; isLoading: boolean } {
-  const firestore = useFirestore();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
