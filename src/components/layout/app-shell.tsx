@@ -1,40 +1,29 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
-import { useAuth } from '@/firebase/auth/provider';
-import { redirect, usePathname } from 'next/navigation';
+import React from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { FloatingNav } from '@/components/layout/floating-nav';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/firebase/auth/provider';
 
-export function AppContent({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname.startsWith('/login');
+  const { isLoading } = useAuth();
+  
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
 
-  useEffect(() => {
-    if (!isLoading && !user && !isAuthPage) {
-      redirect('/login');
-    }
-     if (!isLoading && user && isAuthPage) {
-      redirect('/');
-    }
-  }, [user, isLoading, isAuthPage, pathname]);
-
-
-  if (isLoading && !isAuthPage) {
+  if (isLoading) {
      return (
         <div className="flex items-center justify-center h-screen w-screen">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
         </div>
      );
   }
-  
-  if (isAuthPage) {
-    return <>{children}</>;
-  }
-
 
   return (
     <>
@@ -45,7 +34,6 @@ export function AppContent({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <div className='md:hidden'><FloatingNav /></div>
-      <FirebaseErrorListener />
     </>
   );
 }

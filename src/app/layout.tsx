@@ -4,7 +4,10 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/firebase/auth/provider';
 import { Inter, Archivo } from 'next/font/google';
-import { AppContent } from '@/components/layout/app-content';
+import { Sidebar } from '@/components/layout/sidebar';
+import { FloatingNav } from '@/components/layout/floating-nav';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { AppShell } from '@/components/layout/app-shell';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,8 +39,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <AuthProvider>
-          <AppContent>{children}</AppContent>
+            <AppShell>
+              {children}
+            </AppShell>
           <Toaster />
+          <FirebaseErrorListener />
         </AuthProvider>
       </body>
     </html>

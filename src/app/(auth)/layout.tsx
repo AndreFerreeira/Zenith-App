@@ -19,7 +19,7 @@ export default function AuthLayout({
     }
   }, [user, isLoading]);
 
-  if (isLoading || user) {
+  if (isLoading) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Skeleton className="h-10 w-48 mb-8" />
@@ -36,5 +36,9 @@ export default function AuthLayout({
     );
   }
 
-  return <>{children}</>;
+  if (!user) {
+    return <>{children}</>;
+  }
+  
+  return null;
 }
