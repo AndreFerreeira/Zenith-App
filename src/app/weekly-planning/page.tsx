@@ -72,9 +72,6 @@ export default function WeeklyPlanningPage() {
     };
 
     const updatedTasks = [...day.tasks, newTask];
-    const newPlan = weeklyPlan.map(d => d.id === day.id ? { ...d, tasks: updatedTasks } : d);
-
-    setWeeklyPlan(newPlan);
     handleUpdatePlan(day.id, updatedTasks);
     handleNewTaskChange(day.day, "");
   };
@@ -83,9 +80,6 @@ export default function WeeklyPlanningPage() {
     if (!user?.uid) return;
 
     const updatedTasks = day.tasks.filter((_, i) => i !== taskIndex);
-    const newPlan = weeklyPlan.map(d => d.id === day.id ? { ...d, tasks: updatedTasks } : d);
-    
-    setWeeklyPlan(newPlan);
     handleUpdatePlan(day.id, updatedTasks);
   };
   
@@ -207,5 +201,3 @@ export default function WeeklyPlanningPage() {
     </div>
   );
 }
-
-    
