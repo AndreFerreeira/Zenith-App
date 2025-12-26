@@ -25,6 +25,7 @@ export function Header() {
       return null;
     }
 
+    // Show a loading state for the header while auth state is being determined
     if (isLoading) {
         return (
             <header className="flex justify-between items-center">
@@ -40,14 +41,13 @@ export function Header() {
         )
     }
     
+    // If loading is finished and there's no user, render nothing.
+    // The page-level logic will handle the redirect.
     if (!user) {
-        // Redirect to login if not authenticated
-        if (typeof window !== 'undefined') {
-            router.push('/login');
-        }
-        return null; // or a loading spinner
+        return null;
     }
 
+    // If loading is finished and there is a user, render the header.
     return (
         <header className="flex justify-between items-center">
             <div>

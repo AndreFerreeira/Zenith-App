@@ -22,13 +22,14 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       await signInWithGoogle();
-      router.push('/');
+      // The useEffect will handle the redirect
     } catch (error) {
       console.error('Failed to sign in with Google', error);
       // Optionally, show a toast notification to the user
     }
   };
   
+  // While loading, or if the user is logged in (and redirecting), show a loading skeleton.
   if (isLoading || user) {
     return (
        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
@@ -39,6 +40,7 @@ export default function LoginPage() {
     );
   }
 
+  // Only show login page if not loading and no user
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 text-center">
       <div className="flex items-center gap-4 mb-4">
