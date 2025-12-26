@@ -88,8 +88,8 @@ export const useAnnualGoals = (userId?: string) => {
 };
 
 export const useHabits = (userId?: string, month?: string) => {
-  const collectionRef = userId ? collection(firestore, `users/${userId}/habits`) : null;
-  const q = collectionRef && month ? query(collectionRef, where('month', '==', month)) : collectionRef;
+  const path = userId && month ? `users/${userId}/habits` : null;
+  const q = path ? query(collection(firestore, path), where('month', '==', month)) : null;
   return useCollection<Habit>(q, { listen: true });
 };
 
@@ -204,3 +204,4 @@ export const updateAiMessages = (userId: string, messages: any[]) => {
 export const updateAiNotes = (userId: string, notes: string) => {
   return updateUserDocument(userId, { aiNotes: notes });
 };
+
