@@ -15,6 +15,7 @@ import {
 import { firestore } from '@/firebase';
 import { useCollection } from './use-collection';
 import { useDoc } from './use-doc';
+import React from 'react';
 
 // --- Types ---
 export type AnnualGoal = {
@@ -88,9 +89,13 @@ export const useAnnualGoals = (userId?: string) => {
 
 export const useHabits = (userId?: string, month?: string) => {
   const collectionRef = userId ? collection(firestore, `users/${userId}/habits`) : null;
-  const q = collectionRef && month ? query(collectionRef, where('month', '==', month)) : collectionRef;
+  const q = React.useMemo(() => {
+    if (!collectionRef) return null;
+    return month ? query(collectionRef, where('month', '==', month)) : collectionRef;
+  }, [collectionRef, month]);
   return useCollection<Habit>(q);
 };
+
 
 export const useTransactions = (userId?: string) => {
   const path = userId ? `users/${userId}/transactions` : null;
@@ -109,7 +114,11 @@ export const useWeeklyPlan = (userId?: string) => {
 
 export const useMonthlyStrategy = (userId?: string, month?: string) => {
     const collectionRef = userId ? collection(firestore, `users/${userId}/monthlyStrategies`) : null;
-    const q = collectionRef && month ? query(collectionRef, where('month', '==', month)) : null;
+    const q = React.useMemo(() => {
+        if (!collectionRef) return null;
+        return month ? query(collectionRef, where('month', '==', month)) : null;
+    }, [collectionRef, month]);
+    
     const { data, isLoading } = useCollection<MonthlyStrategy>(q);
     
     // Since we expect only one doc, we extract it.
@@ -128,84 +137,164 @@ export const useAiMessages = (userId?: string) => {
 // General document update
 export const updateUserDocument = (userId: string, data: Partial<UserDocument>) => {
   const userDocRef = doc(firestore, 'users', userId);
-  return updateDoc(userDocRef, data);
+  return updateDoc(userDocRef, data).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: userDocRef.path,
+        operation: 'update',
+        requestResourceData: data
+    }));
+  });
 };
 
 // Annual Goals
 export const addAnnualGoal = (userId: string, goal: Omit<AnnualGoal, 'id'>) => {
   const goalsCollectionRef = collection(firestore, 'users', userId, 'annualGoals');
-  return addDoc(goalsCollectionRef, goal);
+  return addDoc(goalsCollectionRef, goal).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: goalsCollectionRef.path,
+        operation: 'create',
+        requestResourceData: goal
+    }));
+  });
 };
 
 export const updateAnnualGoal = (userId: string, goalId: string, data: Partial<AnnualGoal>) => {
   const goalDocRef = doc(firestore, 'users', userId, 'annualGoals', goalId);
-  return updateDoc(goalDocRef, data);
+  return updateDoc(goalDocRef, data).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: goalDocRef.path,
+        operation: 'update',
+        requestResourceData: data
+    }));
+  });
 };
 
 export const deleteAnnualGoal = (userId: string, goalId: string) => {
   const goalDocRef = doc(firestore, 'users', userId, 'annualGoals', goalId);
-  return deleteDoc(goalDocRef);
+  return deleteDoc(goalDocRef).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: goalDocRef.path,
+        operation: 'delete'
+    }));
+  });
 };
 
 // Habits
 export const addHabit = (userId: string, habit: Omit<Habit, 'id'>) => {
   const habitsCollectionRef = collection(firestore, 'users', userId, 'habits');
-  return addDoc(habitsCollectionRef, habit);
+  return addDoc(habitsCollectionRef, habit).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: habitsCollectionRef.path,
+        operation: 'create',
+        requestResourceData: habit
+    }));
+  });
 };
 
 export const updateHabit = (userId: string, habitId: string, data: Partial<Habit>) => {
   const habitDocRef = doc(firestore, 'users', userId, 'habits', habitId);
-  return updateDoc(habitDocRef, data);
+  return updateDoc(habitDocRef, data).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: habitDocRef.path,
+        operation: 'update',
+        requestResourceData: data
+    }));
+  });
 };
 
 export const deleteHabit = (userId: string, habitId: string) => {
   const habitDocRef = doc(firestore, 'users', userId, 'habits', habitId);
-  return deleteDoc(habitDocRef);
+  return deleteDoc(habitDocRef).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: habitDocRef.path,
+        operation: 'delete'
+    }));
+  });
 };
 
 
 // Transactions
 export const addTransaction = (userId: string, transaction: Omit<Transaction, 'id'>) => {
     const transactionsCollectionRef = collection(firestore, 'users', userId, 'transactions');
-    return addDoc(transactionsCollectionRef, transaction);
+    return addDoc(transactionsCollectionRef, transaction).catch(async (serverError) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: transactionsCollectionRef.path,
+          operation: 'create',
+          requestResourceData: transaction
+      }));
+    });
 };
 
 export const deleteTransaction = (userId: string, transactionId: string) => {
     const transactionDocRef = doc(firestore, 'users', userId, 'transactions', transactionId);
-    return deleteDoc(transactionDocRef);
+    return deleteDoc(transactionDocRef).catch(async (serverError) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: transactionDocRef.path,
+          operation: 'delete'
+      }));
+    });
 };
 
 // Wishlist
 export const addWishlistItem = (userId: string, item: Omit<WishlistItem, 'id'>) => {
     const wishlistCollectionRef = collection(firestore, 'users', userId, 'wishlist');
-    return addDoc(wishlistCollectionRef, item);
+    return addDoc(wishlistCollectionRef, item).catch(async (serverError) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: wishlistCollectionRef.path,
+          operation: 'create',
+          requestResourceData: item
+      }));
+    });
 };
 
 export const deleteWishlistItem = (userId: string, itemId: string) => {
     const wishlistItemDocRef = doc(firestore, 'users', userId, 'wishlist', itemId);
-    return deleteDoc(wishlistItemDocRef);
+    return deleteDoc(wishlistItemDocRef).catch(async (serverError) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: wishlistItemDocRef.path,
+          operation: 'delete'
+      }));
+    });
 };
 
 // Weekly Plan
 export const updateWeeklyPlan = async (userId: string, dayId: string, data: Partial<WeeklyDay>) => {
     const dayDocRef = doc(firestore, `users/${userId}/weeklyPlans/${dayId}`);
-    return updateDoc(dayDocRef, data);
+    return updateDoc(dayDocRef, data).catch(async (serverError) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: dayDocRef.path,
+          operation: 'update',
+          requestResourceData: data
+      }));
+    });
 };
 
 
 // Monthly Strategy
-export const updateMonthlyStrategy = async (userId: string, month: string, data: Partial<MonthlyStrategy>) => {
+export const updateMonthlyStrategy = async (userId: string, month: string, data: Partial<Omit<MonthlyStrategy, 'id'>>) => {
     const strategyCollectionRef = collection(firestore, 'users', userId, 'monthlyStrategies');
     const q = query(strategyCollectionRef, where('month', '==', month));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
         // Create new document if it doesn't exist
-        return addDoc(strategyCollectionRef, { month, ...data });
+        return addDoc(strategyCollectionRef, { month, ...data }).catch(async (serverError) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: strategyCollectionRef.path,
+              operation: 'create',
+              requestResourceData: { month, ...data }
+          }));
+        });
     } else {
         // Update existing document
         const docToUpdate = snapshot.docs[0].ref;
-        return updateDoc(docToUpdate, data);
+        return updateDoc(docToUpdate, data).catch(async (serverError) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: docToUpdate.path,
+              operation: 'update',
+              requestResourceData: data
+          }));
+        });
     }
 };
 
@@ -217,3 +306,8 @@ export const updateAiMessages = (userId: string, messages: any[]) => {
 export const updateAiNotes = (userId: string, notes: string) => {
   return updateUserDocument(userId, { aiNotes: notes });
 };
+
+import { errorEmitter } from "../error-emitter";
+import { FirestorePermissionError } from "../errors";
+
+    

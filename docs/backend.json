@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -101,6 +102,7 @@
         "coreValues": { "type": "string" },
         "financialGoal": { "type": "number" },
         "aiNotes": { "type": "string" },
+        "quickNotes": { "type": "string" },
         "aiMessages": { "type": "array", "items": {"type": "object"} }
       }
     }
@@ -139,3 +141,5 @@
     }
   }
 }
+
+    
