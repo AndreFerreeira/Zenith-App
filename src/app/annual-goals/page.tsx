@@ -243,7 +243,7 @@ export default function AnnualGoalsPage() {
                   value={coreValues}
                   onChange={(e) => setCoreValues(e.target.value)}
                  />
-            </CardContent>
+            </CardContent>          
           </Card>
       </div>
 
