@@ -11,11 +11,14 @@ import {
   where,
   getDocs,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { useCollection } from './use-collection';
 import { useDoc } from './use-doc';
 import React from 'react';
+import { errorEmitter } from "../error-emitter";
+import { FirestorePermissionError } from "../errors";
 
 // --- Types ---
 export type AnnualGoal = {
@@ -134,13 +137,13 @@ export const useAiMessages = (userId?: string) => {
 
 // --- Firestore Write Operations ---
 
-// General document update
+// General document update (using setDoc with merge for safety)
 export const updateUserDocument = (userId: string, data: Partial<UserDocument>) => {
   const userDocRef = doc(firestore, 'users', userId);
-  return updateDoc(userDocRef, data).catch(async (serverError) => {
+  return setDoc(userDocRef, data, { merge: true }).catch(async (serverError) => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: userDocRef.path,
-        operation: 'update',
+        operation: 'update', // Logically an update, even if using set+merge
         requestResourceData: data
     }));
   });
@@ -306,8 +309,5 @@ export const updateAiMessages = (userId: string, messages: any[]) => {
 export const updateAiNotes = (userId: string, notes: string) => {
   return updateUserDocument(userId, { aiNotes: notes });
 };
-
-import { errorEmitter } from "../error-emitter";
-import { FirestorePermissionError } from "../errors";
 
     
