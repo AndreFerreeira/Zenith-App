@@ -58,7 +58,6 @@ export default function IaAssistantPage() {
   }, []);
 
   React.useEffect(() => {
-    // Only save if notes is not the initial empty string
     if (notes) {
       localStorage.setItem('aiAssistantNotes', JSON.stringify(notes));
     }
@@ -68,7 +67,6 @@ export default function IaAssistantPage() {
     if (messages.length > 0) {
       localStorage.setItem('aiAssistantMessages', JSON.stringify(messages));
     } else {
-      // If messages are cleared, remove from storage
       localStorage.removeItem('aiAssistantMessages');
     }
   }, [messages]);
@@ -389,3 +387,5 @@ export default function IaAssistantPage() {
     </div>
   );
 }
+
+    
