@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/firebase/auth/provider';
 import { useMonthlyStrategy, updateMonthlyStrategy } from '@/firebase/firestore/data-hooks';
 import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type StrategyContent = {
   focus: string;
@@ -26,6 +27,8 @@ export default function MonthlyStrategyPage() {
     learnings: "",
   });
 
+  const debounceTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
   React.useEffect(() => {
     if (strategy) {
       setContent({
@@ -33,15 +36,24 @@ export default function MonthlyStrategyPage() {
         wins: strategy.wins || "",
         learnings: strategy.learnings || "",
       });
+    } else {
+      // Clear content if strategy is null (e.g., new month)
+       setContent({ focus: "", wins: "", learnings: "" });
     }
   }, [strategy]);
 
   const handleContentChange = (field: keyof StrategyContent, value: string) => {
-    const newContent = { ...content, [field]: value };
-    setContent(newContent);
-    if (user?.uid) {
-      updateMonthlyStrategy(user.uid, monthKey, newContent);
+    setContent(prev => ({ ...prev, [field]: value }));
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
     }
+
+    debounceTimeout.current = setTimeout(() => {
+      if (user?.uid) {
+        updateMonthlyStrategy(user.uid, monthKey, { [field]: value });
+      }
+    }, 500); // 500ms delay
   };
 
   const strategySections = [
@@ -51,7 +63,20 @@ export default function MonthlyStrategyPage() {
   ] as const;
 
   if (isLoading) {
-    return <div>Carregando estratégia...</div>;
+    return (
+       <div className="flex flex-col gap-8 h-full">
+        <Header />
+        <div>
+          <Skeleton className="h-12 w-1/2" />
+          <Skeleton className="h-4 w-1/3 mt-2" />
+        </div>
+        <div className="grid md:grid-cols-3 gap-6 flex-grow">
+          <Skeleton className="h-full" />
+          <Skeleton className="h-full" />
+          <Skeleton className="h-full" />
+        </div>
+      </div>
+    );
   }
 
   return (

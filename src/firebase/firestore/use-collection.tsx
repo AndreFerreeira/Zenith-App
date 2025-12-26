@@ -7,6 +7,7 @@ import {
   collection,
   query,
   where,
+  getDocs,
   type CollectionReference,
   type Query,
   type DocumentData,
@@ -33,7 +34,6 @@ export function useCollection<T extends DocumentData>(
       return;
     }
 
-    let unsubscribe: () => void;
     let q: Query<T> | CollectionReference<T>;
 
     if (typeof pathOrQueryOrRef === "string") {
@@ -43,7 +43,7 @@ export function useCollection<T extends DocumentData>(
     }
 
     if (options.listen) {
-      unsubscribe = onSnapshot(
+      const unsubscribe = onSnapshot(
         q,
         (snapshot) => {
           const docs = snapshot.docs.map(doc => ({
@@ -64,16 +64,26 @@ export function useCollection<T extends DocumentData>(
           setIsLoading(false);
         }
       );
+      return () => unsubscribe();
     } else {
-      // getDocs logic would go here if listen is false
-      setIsLoading(false);
+       getDocs(q).then(snapshot => {
+         const docs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setData(docs);
+          setIsLoading(false);
+       }).catch(error => {
+          console.error("Error getting collection:", error);
+           if (error.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'path' in q ? q.path : 'unknown',
+                operation: 'list'
+            }));
+          }
+          setIsLoading(false);
+       });
     }
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
   }, [pathOrQueryOrRef, options.listen]);
 
   return { data, isLoading };
