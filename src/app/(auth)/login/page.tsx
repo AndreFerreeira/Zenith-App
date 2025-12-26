@@ -40,7 +40,7 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       toast({ title: 'Login com Google bem-sucedido!' });
-    } catch (error: any) => {
+    } catch (error: any) {
       console.error("Failed to sign in with Google", error);
       toast({
         variant: 'destructive',
