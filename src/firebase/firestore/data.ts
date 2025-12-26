@@ -1,4 +1,3 @@
-
 import { collection, addDoc, doc, updateDoc, deleteDoc, setDoc, type Firestore, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -78,4 +77,3 @@ export const updateUserDocument = (firestore: Firestore, userId: string, updates
             errorEmitter.emit('permission-error', permissionError);
         });
 };
-

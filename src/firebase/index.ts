@@ -36,3 +36,4 @@ export {
   useCollection,
   useDoc,
 };
+export type { FirebaseContextValue } from './provider';
