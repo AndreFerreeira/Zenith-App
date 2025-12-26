@@ -12,6 +12,7 @@ import {
   getDocs,
   writeBatch,
   setDoc,
+  type CollectionReference,
 } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { useCollection } from './use-collection';
@@ -91,11 +92,15 @@ export const useAnnualGoals = (userId?: string) => {
 };
 
 export const useHabits = (userId?: string, month?: string) => {
-  const collectionRef = userId ? collection(firestore, `users/${userId}/habits`) : null;
+  const collectionRef = React.useMemo(() => 
+    userId ? collection(firestore, `users/${userId}/habits`) : null
+  , [userId]);
+
   const q = React.useMemo(() => {
     if (!collectionRef) return null;
     return month ? query(collectionRef, where('month', '==', month)) : collectionRef;
   }, [collectionRef, month]);
+  
   return useCollection<Habit>(q);
 };
 
@@ -116,7 +121,10 @@ export const useWeeklyPlan = (userId?: string) => {
 };
 
 export const useMonthlyStrategy = (userId?: string, month?: string) => {
-    const collectionRef = userId ? collection(firestore, `users/${userId}/monthlyStrategies`) : null;
+    const collectionRef = React.useMemo(() =>
+        userId ? collection(firestore, 'users', userId, 'monthlyStrategies') : null
+    , [userId]);
+
     const q = React.useMemo(() => {
         if (!collectionRef) return null;
         return month ? query(collectionRef, where('month', '==', month)) : null;
@@ -124,7 +132,6 @@ export const useMonthlyStrategy = (userId?: string, month?: string) => {
     
     const { data, isLoading } = useCollection<MonthlyStrategy>(q);
     
-    // Since we expect only one doc, we extract it.
     const strategyDoc = data && data.length > 0 ? data[0] : null;
 
     return { data: strategyDoc, isLoading };
@@ -137,13 +144,12 @@ export const useAiMessages = (userId?: string) => {
 
 // --- Firestore Write Operations ---
 
-// General document update (using setDoc with merge for safety)
 export const updateUserDocument = (userId: string, data: Partial<UserDocument>) => {
   const userDocRef = doc(firestore, 'users', userId);
   return setDoc(userDocRef, data, { merge: true }).catch(async (serverError) => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: userDocRef.path,
-        operation: 'update', // Logically an update, even if using set+merge
+        operation: 'update',
         requestResourceData: data
     }));
   });
@@ -277,27 +283,27 @@ export const updateWeeklyPlan = async (userId: string, dayId: string, data: Part
 export const updateMonthlyStrategy = async (userId: string, month: string, data: Partial<Omit<MonthlyStrategy, 'id'>>) => {
     const strategyCollectionRef = collection(firestore, 'users', userId, 'monthlyStrategies');
     const q = query(strategyCollectionRef, where('month', '==', month));
-    const snapshot = await getDocs(q);
+    try {
+        const snapshot = await getDocs(q);
 
-    if (snapshot.empty) {
-        // Create new document if it doesn't exist
-        return addDoc(strategyCollectionRef, { month, ...data }).catch(async (serverError) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: strategyCollectionRef.path,
-              operation: 'create',
-              requestResourceData: { month, ...data }
-          }));
-        });
-    } else {
-        // Update existing document
-        const docToUpdate = snapshot.docs[0].ref;
-        return updateDoc(docToUpdate, data).catch(async (serverError) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: docToUpdate.path,
-              operation: 'update',
-              requestResourceData: data
-          }));
-        });
+        if (snapshot.empty) {
+            return await addDoc(strategyCollectionRef, { month, ...data });
+        } else {
+            const docToUpdate = snapshot.docs[0].ref;
+            return await updateDoc(docToUpdate, data);
+        }
+    } catch (serverError: any) {
+        if (serverError.code === 'permission-denied') {
+            const operation = snapshot.empty ? 'create' : 'update';
+            const path = snapshot.empty ? strategyCollectionRef.path : snapshot.docs[0].ref.path;
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: path,
+                operation: operation,
+                requestResourceData: data
+            }));
+        }
+        // Re-throw other errors
+        throw serverError;
     }
 };
 
@@ -309,5 +315,3 @@ export const updateAiMessages = (userId: string, messages: any[]) => {
 export const updateAiNotes = (userId: string, notes: string) => {
   return updateUserDocument(userId, { aiNotes: notes });
 };
-
-    

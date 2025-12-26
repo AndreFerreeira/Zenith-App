@@ -32,7 +32,6 @@ export default function WeeklyPlanningPage() {
 
   React.useEffect(() => {
     if (weeklyPlanData) {
-      // Ensure the plan is always in the correct order
       const dayOrder = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
       const sortedPlan = [...weeklyPlanData].sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
       setWeeklyPlan(sortedPlan);
@@ -40,7 +39,7 @@ export default function WeeklyPlanningPage() {
     if (userDoc?.quickNotes) {
       setQuickNotes(userDoc.quickNotes);
     }
-  }, [weeklyPlanData, userDoc]);
+  }, [weeklyPlanData, userDoc?.quickNotes]);
 
   const handleUpdatePlan = (dayId: string, newTasks: WeeklyTask[]) => {
     if (user?.uid) {
