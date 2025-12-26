@@ -47,9 +47,12 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       toast({ title: "Sucesso!", description: "Login com Google realizado." });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to sign in with Google', error);
-      toast({ variant: 'destructive', title: "Erro no Login", description: "Não foi possível fazer login com o Google." });
+      const description = error.code === 'auth/operation-not-allowed'
+        ? "O login com Google não está habilitado. Verifique a configuração do Firebase."
+        : "Não foi possível fazer login com o Google. Tente novamente.";
+      toast({ variant: 'destructive', title: "Erro no Login", description });
     }
   };
 
@@ -57,9 +60,12 @@ export default function LoginPage() {
     try {
       await signInWithEmail(values.email, values.password);
       toast({ title: "Sucesso!", description: "Login realizado." });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to sign in with email", error);
-      toast({ variant: 'destructive', title: "Erro no Login", description: "E-mail ou senha inválidos." });
+      const description = error.code === 'auth/invalid-credential'
+        ? "E-mail ou senha inválidos."
+        : "Ocorreu um erro ao tentar fazer login.";
+      toast({ variant: 'destructive', title: "Erro no Login", description });
     }
   };
   

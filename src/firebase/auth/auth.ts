@@ -25,13 +25,7 @@ export const signInWithGoogle = async () => {
     return { user, token };
   } catch (error: any) {
     // Handle Errors here.
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    // The email of the user's account used.
-    const email = error.customData?.email;
-    // The AuthCredential type that was used.
-    const credential = GoogleAuthProvider.credentialFromError(error);
-    console.error("Google Sign-In Error:", { errorCode, errorMessage, email, credential });
+    console.error(`Google Sign-In Error: [${error.code}] ${error.message}`);
     throw error;
   }
 };
