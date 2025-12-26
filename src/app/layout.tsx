@@ -17,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -24,8 +25,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-8 overflow-y-auto h-screen flex flex-col pb-28">
+          <div className='hidden md:block'>
+            <Sidebar />
+          </div>
+          <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen flex flex-col pb-28">
             {children}
           </main>
         </div>
