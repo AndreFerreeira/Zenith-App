@@ -8,6 +8,9 @@ import { Card } from "@/components/ui/card";
 import { ArrowUpRight, Check, SlidersHorizontal, Target, Wallet, Calendar, Sparkles, Heart, CircleDashed } from "lucide-react";
 import Link from "next/link";
 import type { Transaction, MonthlyHabit, Goal, WeeklyDay } from '@/lib/data';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type AnnualGoalSection = {
   title: string;
@@ -16,11 +19,20 @@ type AnnualGoalSection = {
 
 
 export default function Home() {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+
   const [activeGoals, setActiveGoals] = React.useState(0);
   const [currentBalance, setCurrentBalance] = React.useState(0);
   const [habitsToday, setHabitsToday] = React.useState({ completed: 0, total: 0 });
   const [nextEvent, setNextEvent] = React.useState("Livre");
   const [coreValues, setCoreValues] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [isLoading, user, router]);
 
   React.useEffect(() => {
     // This function will run on the client, so window is available.
@@ -87,7 +99,9 @@ export default function Home() {
       } catch (e) { console.error("Failed to parse core values", e)}
     };
 
-    calculateOverview();
+    if (user) {
+      calculateOverview();
+    }
     
     // Optional: Re-calculate when storage changes (e.g., in another tab)
     window.addEventListener('storage', calculateOverview);
@@ -96,7 +110,7 @@ export default function Home() {
       window.removeEventListener('storage', calculateOverview);
     }
 
-  }, []);
+  }, [user]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -128,6 +142,34 @@ export default function Home() {
       href: "/weekly-planning",
     },
   ];
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex flex-col gap-8">
+        <Header />
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-6 w-1/2" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Skeleton className="h-40 rounded-lg" />
+          <Skeleton className="h-40 rounded-lg" />
+          <Skeleton className="h-40 rounded-lg" />
+          <Skeleton className="h-40 rounded-lg" />
+        </div>
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Skeleton className="h-64 rounded-lg lg:col-span-2" />
+            <Skeleton className="h-64 rounded-lg" />
+         </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
