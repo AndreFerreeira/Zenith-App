@@ -21,21 +21,30 @@ import {
   CalendarDays,
   Trash2,
 } from "lucide-react";
-import { addMonths, format, getDaysInMonth, subMonths } from "date-fns";
+import { addMonths, format, getDaysInMonth, subMonths, startOfWeek, addDays, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/firebase/auth/provider";
 import { useHabits, addHabit, updateHabit, deleteHabit } from "@/firebase/firestore/data-hooks";
 import type { Habit } from "@/firebase/firestore/data-hooks";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function HabitTrackerPage() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = React.useState(new Date());
   const monthKey = format(currentDate, 'yyyy-MM');
+  const isMobile = useIsMobile();
 
   const { data: monthlyHabits, isLoading } = useHabits(user?.uid, monthKey);
   const [newHabitName, setNewHabitName] = React.useState("");
+  
+  const [currentWeekStart, setCurrentWeekStart] = React.useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const daysInMonth = Array.from({ length: getDaysInMonth(currentDate) }, (_, i) => i + 1);
+
+  const weeklyDays = eachDayOfInterval({
+    start: currentWeekStart,
+    end: addDays(currentWeekStart, 6),
+  });
 
   const handleAddHabit = () => {
     if (!user?.uid || newHabitName.trim() === "") return;
@@ -67,6 +76,16 @@ export default function HabitTrackerPage() {
   const handleNextMonth = () => {
       setCurrentDate(addMonths(currentDate, 1));
   }
+  
+  const handlePreviousWeek = () => {
+    setCurrentWeekStart(subMonths(currentWeekStart, 1));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeekStart(addMonths(currentWeekStart, 1));
+  };
+  
+  const displayedDays = isMobile ? weeklyDays.map(d => d.getDate()) : daysInMonth;
 
 
   return (
@@ -85,13 +104,13 @@ export default function HabitTrackerPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
+          <Button variant="outline" size="icon" onClick={isMobile ? handlePreviousWeek : handlePreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="font-semibold text-sm w-36 text-center uppercase">
-            {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
+             {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
           </span>
-          <Button variant="outline" size="icon" onClick={handleNextMonth}>
+          <Button variant="outline" size="icon" onClick={isMobile ? handleNextWeek : handleNextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -124,7 +143,7 @@ export default function HabitTrackerPage() {
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="w-40 text-left text-xs text-muted-foreground font-semibold py-2">OBJETIVO</th>
-                  {daysInMonth.map((day) => (
+                  {displayedDays.map((day) => (
                     <th key={day} className="text-xs text-muted-foreground font-semibold w-10 text-center py-2">
                       {day}
                     </th>
@@ -133,7 +152,7 @@ export default function HabitTrackerPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={daysInMonth.length + 1}>Carregando hábitos...</td></tr>
+                  <tr><td colSpan={displayedDays.length + 1}>Carregando hábitos...</td></tr>
                 ) : (monthlyHabits || []).map((habit) => (
                   <React.Fragment key={habit.id}>
                     <tr>
@@ -145,7 +164,7 @@ export default function HabitTrackerPage() {
                           </Button>
                         </div>
                       </td>
-                      {daysInMonth.map((day) => (
+                      {displayedDays.map((day) => (
                         <td key={day} className="text-center h-10 py-4">
                           <Checkbox
                             className="w-7 h-7 bg-black/20 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground rounded-md border-none"
@@ -156,7 +175,7 @@ export default function HabitTrackerPage() {
                       ))}
                     </tr>
                     <tr>
-                      <td colSpan={daysInMonth.length + 1} className="pb-4 pt-0">
+                      <td colSpan={displayedDays.length + 1} className="pb-4 pt-0">
                         <Progress value={(habit.completedDays.length / daysInMonth.length) * 100} className="h-2" />
                       </td>
                     </tr>
