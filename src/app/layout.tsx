@@ -6,6 +6,7 @@ import { AuthProvider } from '@/firebase/auth/provider';
 import { Inter, Archivo } from 'next/font/google';
 import { AppShell } from '@/components/layout/app-shell';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { NotificationsProvider } from '@/components/NotificationsProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -37,9 +38,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <AuthProvider>
+          <NotificationsProvider>
             <AppShell>
               {children}
             </AppShell>
+          </NotificationsProvider>
           <Toaster />
           <FirebaseErrorListener />
         </AuthProvider>
