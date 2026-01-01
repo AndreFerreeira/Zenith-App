@@ -129,13 +129,15 @@ export default function FinancialManagementPage() {
   }));
 
   const years = React.useMemo(() => {
-    const currentYear = new Date().getFullYear();
+    const referenceYear = 2025;
     const transactionYears = parsedTransactions.map(t => getYear(t.date));
+    const futureYears = Array.from({ length: 6 }, (_, i) => referenceYear + i); // 2025 + 5 years
+    
     const allYears = new Set([
-      currentYear,
       ...transactionYears,
-      ...Array.from({ length: 6 }, (_, i) => currentYear + i) // current year + next 5
+      ...futureYears,
     ]);
+    
     return Array.from(allYears).sort((a, b) => a - b);
   }, [parsedTransactions]);
   
