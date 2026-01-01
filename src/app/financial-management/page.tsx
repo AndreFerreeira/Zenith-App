@@ -192,12 +192,9 @@ export default function FinancialManagementPage() {
 
 
   const chartData = React.useMemo(() => {
-    const allTransactions = [...parsedTransactions];
-    allTransactions.sort((a,b) => a.date.getTime() - b.date.getTime());
-
     const monthlyData: { [key: string]: number } = {};
 
-    allTransactions.forEach(t => {
+    parsedTransactions.forEach(t => {
         const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
         if (!monthlyData[monthKey]) {
             monthlyData[monthKey] = 0;
@@ -228,7 +225,7 @@ export default function FinancialManagementPage() {
     <div className="flex flex-col gap-8">
       <Header />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="bg-card-foreground/5 border-none">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -277,11 +274,11 @@ export default function FinancialManagementPage() {
                 Nova Transação
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex items-center gap-2">
+            <CardContent className="flex flex-col md:flex-row items-center gap-2">
               <Input placeholder="Descrição..." className="bg-card border-none" value={newTransactionDesc} onChange={(e) => setNewTransactionDesc(e.target.value)} />
-              <Input placeholder="Valor..." type="number" className="bg-card border-none w-40" value={newTransactionValue} onChange={(e) => setNewTransactionValue(e.target.value)} />
+              <Input placeholder="Valor..." type="number" className="bg-card border-none w-full md:w-40" value={newTransactionValue} onChange={(e) => setNewTransactionValue(e.target.value)} />
               <Select value={newTransactionType} onValueChange={(value: "entrada" | "saida") => setNewTransactionType(value)}>
-                <SelectTrigger className="w-32 bg-card border-none">
+                <SelectTrigger className="w-full md:w-32 bg-card border-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -297,16 +294,16 @@ export default function FinancialManagementPage() {
 
           <Card className="bg-card-foreground/5 border-none h-[300px] flex flex-col">
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                  <CardTitle className="text-base font-semibold">
                   Histórico de Movimentações
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full md:w-auto">
                    <Select
                     value={String(selectedMonth)}
                     onValueChange={(value) => setSelectedMonth(Number(value))}
                   >
-                    <SelectTrigger className="w-36 bg-card border-none h-8">
+                    <SelectTrigger className="w-full flex-1 md:w-36 bg-card border-none h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -321,7 +318,7 @@ export default function FinancialManagementPage() {
                     value={String(selectedYear)}
                     onValueChange={(value) => setSelectedYear(Number(value))}
                   >
-                    <SelectTrigger className="w-24 bg-card border-none h-8">
+                    <SelectTrigger className="w-full flex-1 md:w-24 bg-card border-none h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -349,24 +346,26 @@ export default function FinancialManagementPage() {
                     <div key={t.id} className="bg-card p-3 rounded-md group text-left">
                        {editingTransactionId === t.id ? (
                         // Edit Mode
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
                           <Input value={editedDesc} onChange={(e) => setEditedDesc(e.target.value)} className="bg-card-foreground/10 border-none h-9 flex-grow" />
-                          <Input type="number" value={editedAmount} onChange={(e) => setEditedAmount(e.target.value)} className="bg-card-foreground/10 border-none h-9 w-28" />
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-green-400 hover:text-green-400" onClick={() => handleSaveEditing(t.id)}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancelEditing}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                          <Input type="number" value={editedAmount} onChange={(e) => setEditedAmount(e.target.value)} className="bg-card-foreground/10 border-none h-9 w-full sm:w-28" />
+                          <div className="flex justify-end w-full sm:w-auto">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-400 hover:text-green-400" onClick={() => handleSaveEditing(t.id)}>
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancelEditing}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         // Display Mode
-                        <div className="flex justify-between items-center">
-                          <div>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                          <div className='mb-2 sm:mb-0'>
                             <p className="text-sm font-medium">{t.description}</p>
                             <p className="text-xs text-muted-foreground">{format(t.date, 'dd/MM/yyyy')}</p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-between">
                             <Badge variant={t.type === 'entrada' ? 'default' : 'destructive'} className={t.type === 'entrada' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}>
                               {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
                             </Badge>
@@ -454,3 +453,5 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
+
+    
