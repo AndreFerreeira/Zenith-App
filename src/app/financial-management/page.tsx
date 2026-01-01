@@ -194,37 +194,32 @@ export default function FinancialManagementPage() {
   const chartData = React.useMemo(() => {
     const allTransactions = [...parsedTransactions];
     allTransactions.sort((a,b) => a.date.getTime() - b.date.getTime());
-  
+
     const monthlyData: { [key: string]: number } = {};
-  
+
     allTransactions.forEach(t => {
-      const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = 0;
-      }
+        const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
+        if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = 0;
+        }
+        if (t.type === 'entrada') {
+            monthlyData[monthKey] += t.amount;
+        } else {
+            monthlyData[monthKey] -= t.amount;
+        }
     });
-    
-    allTransactions.forEach(t => {
-      const monthKey = format(startOfMonth(t.date), 'yyyy-MM');
-      if (t.type === 'entrada') {
-        monthlyData[monthKey] += t.amount;
-      } else {
-        monthlyData[monthKey] -= t.amount;
-      }
-    });
-  
+
     const sortedMonthKeys = Object.keys(monthlyData).sort();
     
-    let accumulatedBalance = 0;
     const chartPoints = sortedMonthKeys.map(monthKey => {
-      accumulatedBalance += monthlyData[monthKey];
+      const balance = monthlyData[monthKey];
       const date = parse(monthKey, 'yyyy-MM', new Date());
       return {
         month: format(date, 'MMM/yy', { locale: ptBR }),
-        balance: accumulatedBalance,
+        balance: balance,
       };
     });
-  
+
     return chartPoints.slice(-6);
   }, [parsedTransactions]);
 
@@ -401,7 +396,7 @@ export default function FinancialManagementPage() {
                         <ArrowUpRight className="h-5 w-5" />
                         Evolução de Saldo
                     </CardTitle>
-                     <p className="text-xs text-muted-foreground">SALDO ACUMULADO POR PERÍODO</p>
+                     <p className="text-xs text-muted-foreground">SALDO LÍQUIDO POR PERÍODO</p>
                 </CardHeader>
                 <CardContent className="flex-grow flex items-center justify-center">
                     <ChartContainer config={chartConfig} className="w-full h-full">
