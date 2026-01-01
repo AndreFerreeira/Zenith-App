@@ -134,6 +134,7 @@ export default function FinancialManagementPage() {
     const futureYears = Array.from({ length: 6 }, (_, i) => referenceYear + i); // 2025 + 5 years
     
     const allYears = new Set([
+      referenceYear,
       ...transactionYears,
       ...futureYears,
     ]);
@@ -174,7 +175,7 @@ export default function FinancialManagementPage() {
       accumulatedBalance += monthlyData[monthKey];
       const date = parse(monthKey, 'yyyy-MM', new Date());
       return {
-        month: format(date, 'MMM', { locale: ptBR }),
+        month: format(date, 'MMM/yy', { locale: ptBR }),
         balance: accumulatedBalance,
       };
     });
@@ -343,7 +344,7 @@ export default function FinancialManagementPage() {
                               tickLine={false}
                               tickMargin={10}
                               axisLine={false}
-                              tickFormatter={(value) => value.slice(0, 3)}
+                              tickFormatter={(value) => value.slice(0, 6)}
                             />
                              <YAxis hide={true} />
                             <ChartTooltip
@@ -385,11 +386,8 @@ export default function FinancialManagementPage() {
                         </Button>
                     </div>
                 </CardContent>
-            </Card>
         </div>
       </div>
     </div>
   );
 }
-
-    
