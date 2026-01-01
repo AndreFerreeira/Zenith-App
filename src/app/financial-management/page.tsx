@@ -128,7 +128,16 @@ export default function FinancialManagementPage() {
     label: format(new Date(0, i), 'MMMM', { locale: ptBR }),
   }));
 
-  const years = Array.from({ length: 7 }, (_, i) => 2024 + i);
+  const years = React.useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const transactionYears = parsedTransactions.map(t => getYear(t.date));
+    const allYears = new Set([
+      currentYear,
+      ...transactionYears,
+      ...Array.from({ length: 6 }, (_, i) => currentYear + i) // current year + next 5
+    ]);
+    return Array.from(allYears).sort((a, b) => a - b);
+  }, [parsedTransactions]);
   
   const filteredTransactions = parsedTransactions.filter(
     (t) => getMonth(t.date) === selectedMonth && getYear(t.date) === selectedYear
@@ -380,3 +389,5 @@ export default function FinancialManagementPage() {
     </div>
   );
 }
+
+    
