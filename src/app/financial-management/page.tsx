@@ -22,6 +22,9 @@ import {
   ListTodo,
   Landmark,
   Trash2,
+  Edit,
+  Check,
+  X,
 } from "lucide-react";
 import {
   ChartContainer,
@@ -33,8 +36,9 @@ import { Badge } from '@/components/ui/badge';
 import { format, getMonth, getYear, startOfMonth, parse, set, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/firebase/auth/provider';
-import { useTransactions, useWishlist, useUserDocument, addTransaction, deleteTransaction, addWishlistItem, deleteWishlistItem, updateUserDocument } from '@/firebase/firestore/data-hooks';
+import { useTransactions, useWishlist, useUserDocument, addTransaction, deleteTransaction, addWishlistItem, deleteWishlistItem, updateUserDocument, updateTransaction } from '@/firebase/firestore/data-hooks';
 import type { Transaction, WishlistItem } from '@/firebase/firestore/data-hooks';
+import { useToast } from '@/hooks/use-toast';
 
 const chartConfig = {
   balance: {
@@ -45,6 +49,7 @@ const chartConfig = {
 
 export default function FinancialManagementPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: userDoc, isLoading: isUserDocLoading } = useUserDocument(user?.uid);
   const { data: transactions, isLoading: isTransactionsLoading } = useTransactions(user?.uid);
   const { data: wishlist, isLoading: isWishlistLoading } = useWishlist(user?.uid);
@@ -58,6 +63,12 @@ export default function FinancialManagementPage() {
   const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
   
+  // State for inline editing
+  const [editingTransactionId, setEditingTransactionId] = React.useState<string | null>(null);
+  const [editedDesc, setEditedDesc] = React.useState('');
+  const [editedAmount, setEditedAmount] = React.useState('');
+
+
   React.useEffect(() => {
     if (userDoc?.financialGoal) {
       setEvolutionGoal(userDoc.financialGoal);
@@ -88,6 +99,39 @@ export default function FinancialManagementPage() {
     setNewTransactionDesc("");
     setNewTransactionValue("");
   };
+  
+  const handleStartEditing = (transaction: Transaction) => {
+    setEditingTransactionId(transaction.id);
+    setEditedDesc(transaction.description);
+    setEditedAmount(String(transaction.amount));
+  };
+  
+  const handleCancelEditing = () => {
+    setEditingTransactionId(null);
+    setEditedDesc('');
+    setEditedAmount('');
+  };
+
+  const handleSaveEditing = (transactionId: string) => {
+    if (!user) return;
+    const newAmount = parseFloat(editedAmount);
+    if (editedDesc.trim() === '' || isNaN(newAmount)) {
+        toast({
+            variant: "destructive",
+            title: "Erro de Validação",
+            description: "A descrição não pode estar em branco e o valor deve ser um número.",
+        });
+        return;
+    }
+
+    updateTransaction(user.uid, transactionId, {
+      description: editedDesc.trim(),
+      amount: newAmount,
+    });
+    
+    handleCancelEditing();
+  };
+
 
   const handleRemoveTransaction = (id: string) => {
     if (!user?.uid) return;
@@ -144,7 +188,8 @@ export default function FinancialManagementPage() {
   
   const filteredTransactions = parsedTransactions.filter(
     (t) => getMonth(t.date) === selectedMonth && getYear(t.date) === selectedYear
-  );
+  ).sort((a, b) => b.date.getTime() - a.date.getTime());
+
 
   const chartData = React.useMemo(() => {
     const allTransactions = [...parsedTransactions];
@@ -306,19 +351,41 @@ export default function FinancialManagementPage() {
               ) : (
                 <div className="space-y-2">
                   {filteredTransactions.map(t => (
-                    <div key={t.id} className="flex justify-between items-center bg-card p-2 rounded-md group">
-                      <div>
-                        <p className="text-sm font-medium text-left">{t.description}</p>
-                        <p className="text-xs text-muted-foreground text-left">{t.date.toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={t.type === 'entrada' ? 'default' : 'destructive'} className={t.type === 'entrada' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}>
-                          {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
-                        </Badge>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveTransaction(t.id)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div key={t.id} className="bg-card p-3 rounded-md group text-left">
+                       {editingTransactionId === t.id ? (
+                        // Edit Mode
+                        <div className="flex items-center gap-2">
+                          <Input value={editedDesc} onChange={(e) => setEditedDesc(e.target.value)} className="bg-card-foreground/10 border-none h-9 flex-grow" />
+                          <Input type="number" value={editedAmount} onChange={(e) => setEditedAmount(e.target.value)} className="bg-card-foreground/10 border-none h-9 w-28" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-green-400 hover:text-green-400" onClick={() => handleSaveEditing(t.id)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        // Display Mode
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm font-medium">{t.description}</p>
+                            <p className="text-xs text-muted-foreground">{format(t.date, 'dd/MM/yyyy')}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={t.type === 'entrada' ? 'default' : 'destructive'} className={t.type === 'entrada' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}>
+                              {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
+                            </Badge>
+                            <div className='flex opacity-0 group-hover:opacity-100 transition-opacity'>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleStartEditing(t)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveTransaction(t.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -344,7 +411,7 @@ export default function FinancialManagementPage() {
                               tickLine={false}
                               tickMargin={10}
                               axisLine={false}
-                              tickFormatter={(value) => value.slice(0, 6)}
+                              tickFormatter={(value) => value.slice(0, 7)}
                             />
                              <YAxis hide={true} />
                             <ChartTooltip
@@ -386,6 +453,7 @@ export default function FinancialManagementPage() {
                         </Button>
                     </div>
                 </CardContent>
+            </Card>
         </div>
       </div>
     </div>

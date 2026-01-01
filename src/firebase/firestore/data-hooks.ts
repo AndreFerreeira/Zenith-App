@@ -108,7 +108,7 @@ export const useHabits = (userId?: string, month?: string) => {
 
 export const useTransactions = (userId?: string) => {
   const path = userId ? `users/${userId}/transactions` : null;
-  return useCollection<Transaction>(path);
+  return useCollection<Transaction>(path, { listen: true });
 };
 
 export const useWishlist = (userId?: string) => {
@@ -233,6 +233,17 @@ export const addTransaction = (userId: string, transaction: Omit<Transaction, 'i
           requestResourceData: transaction
       }));
     });
+};
+
+export const updateTransaction = (userId: string, transactionId: string, data: Partial<Transaction>) => {
+  const transactionDocRef = doc(firestore, 'users', userId, 'transactions', transactionId);
+  return updateDoc(transactionDocRef, data).catch(async (serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: transactionDocRef.path,
+        operation: 'update',
+        requestResourceData: data
+    }));
+  });
 };
 
 export const deleteTransaction = (userId: string, transactionId: string) => {
