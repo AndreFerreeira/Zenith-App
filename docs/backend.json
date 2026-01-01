@@ -103,7 +103,6 @@
         "financialGoal": { "type": "number" },
         "aiNotes": { "type": "string" },
         "quickNotes": { "type": "string" },
-        "weeklyNotesBlocks": { "type": "array", "items": {"type": "string"} },
         "aiMessages": { "type": "array", "items": {"type": "object"} }
       }
     }
@@ -142,5 +141,3 @@
     }
   }
 }
-
-    

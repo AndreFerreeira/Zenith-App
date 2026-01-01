@@ -76,7 +76,6 @@ export type UserDocument = {
   financialGoal?: number;
   aiNotes?: string;
   quickNotes?: string;
-  weeklyNotesBlocks?: string[];
   aiMessages?: any[];
 };
 
