@@ -143,6 +143,20 @@ export const useAiMessages = (userId?: string) => {
 };
 
 // --- Firestore Write Operations ---
+export const ensureWeeklyPlanExists = async (userId: string) => {
+    const weeklyPlansRef = collection(firestore, `users/${userId}/weeklyPlans`);
+    const snapshot = await getDocs(weeklyPlansRef);
+
+    if (snapshot.empty) {
+        const batch = writeBatch(firestore);
+        const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+        days.forEach(day => {
+            const dayRef = doc(weeklyPlansRef); // Gera um ID automático
+            batch.set(dayRef, { day, tasks: [] });
+        });
+        await batch.commit();
+    }
+};
 
 export const updateUserDocument = (userId: string, data: Partial<UserDocument>) => {
   const userDocRef = doc(firestore, 'users', userId);

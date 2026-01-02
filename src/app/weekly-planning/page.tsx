@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar, Plus, X, NotebookPen } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/firebase/auth/provider';
-import { useWeeklyPlan, useUserDocument, updateWeeklyPlan, updateUserDocument } from '@/firebase/firestore/data-hooks';
+import { useWeeklyPlan, useUserDocument, updateWeeklyPlan, updateUserDocument, ensureWeeklyPlanExists } from '@/firebase/firestore/data-hooks';
 import type { WeeklyDay, WeeklyTask, TaskCategory } from "@/firebase/firestore/data-hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -32,6 +32,12 @@ export default function WeeklyPlanningPage() {
   
   const weeklyPlanJson = JSON.stringify(weeklyPlanData);
   const userDocJson = JSON.stringify(userDoc);
+
+  React.useEffect(() => {
+    if (user?.uid) {
+      ensureWeeklyPlanExists(user.uid);
+    }
+  }, [user]);
 
   React.useEffect(() => {
     if (weeklyPlanData) {

@@ -1,0 +1,16 @@
+{
+  "name": "Zenith Hábitos",
+  "short_name": "Zenith",
+  "description": "Sua jornada de 365 dias começa agora. Organize-se com propósito e transforme decisões em sucessos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#fcfcfc",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
