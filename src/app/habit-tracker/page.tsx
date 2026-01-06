@@ -20,6 +20,7 @@ import {
   Plus,
   CalendarDays,
   Trash2,
+  BarChart,
 } from "lucide-react";
 import { addMonths, format, getDaysInMonth, subMonths, startOfWeek, addDays, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -27,6 +28,22 @@ import { useAuth } from "@/firebase/auth/provider";
 import { useHabits, addHabit, updateHabit, deleteHabit } from "@/firebase/firestore/data-hooks";
 import type { Habit } from "@/firebase/firestore/data-hooks";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from "@/components/ui/chart";
+import { Bar, BarChart as RechartsBarChart, XAxis, YAxis } from "recharts";
+
+
+const chartConfig = {
+  completion: {
+    label: "Conclusão",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 
 export default function HabitTrackerPage() {
   const { user } = useAuth();
@@ -86,6 +103,14 @@ export default function HabitTrackerPage() {
   };
   
   const displayedDays = isMobile ? weeklyDays.map(d => d.getDate()) : daysInMonth;
+
+  const chartData = React.useMemo(() => {
+    if (!monthlyHabits) return [];
+    return monthlyHabits.map(habit => ({
+        name: habit.name,
+        completion: Math.round((habit.completedDays.length / daysInMonth.length) * 100),
+    }));
+  }, [monthlyHabits, daysInMonth.length]);
 
 
   return (
@@ -187,6 +212,50 @@ export default function HabitTrackerPage() {
         </CardContent>
       </Card>
       
+      {(monthlyHabits && monthlyHabits.length > 0) && (
+        <Card className="border-none bg-card-foreground/5">
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <BarChart className="h-5 w-5 text-muted-foreground" />
+                    <CardTitle className="text-base font-semibold">
+                        PERFORMANCE MENSAL
+                    </CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    Percentual de conclusão de cada hábito no mês.
+                </p>
+            </CardHeader>
+            <CardContent className="h-80">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                    <RechartsBarChart accessibilityLayer data={chartData} margin={{ top: 20 }}>
+                        <XAxis 
+                            dataKey="name" 
+                            tickLine={false} 
+                            axisLine={false}
+                            tickMargin={8}
+                            interval={0}
+                            tickFormatter={(value) => value.slice(0, 10) + (value.length > 10 ? '...' : '')}
+                        />
+                        <YAxis 
+                            tickFormatter={(value) => `${value}%`}
+                            tickLine={false} 
+                            axisLine={false}
+                        />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent formatter={(value) => `${value}%`} />}
+                        />
+                        <Bar 
+                            dataKey="completion" 
+                            fill="var(--color-completion)" 
+                            radius={8} 
+                        />
+                    </RechartsBarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+      )}
+
       <footer className="text-center text-xs text-muted-foreground mt-auto py-4">
       </footer>
     </div>
