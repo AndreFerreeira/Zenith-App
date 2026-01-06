@@ -7,6 +7,7 @@ import { Inter, Archivo } from 'next/font/google';
 import { AppShell } from '@/components/layout/app-shell';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { NotificationsProvider } from '@/components/NotificationsProvider';
+import { Analytics } from '@vercel/analytics/react';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
           <Toaster />
           <FirebaseErrorListener />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
